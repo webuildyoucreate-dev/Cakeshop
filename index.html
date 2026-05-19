@@ -150,10 +150,15 @@
                 const itemEl = document.createElement('div');
                 itemEl.className = 'cart-item';
                 let extrasHTML = '';
-                if (item.note || item.option) {
+                if (item.note || item.options) {
                     extrasHTML = `<div class="cart-item-note" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 6px;">`;
                     if (item.note) extrasHTML += `<strong>Note:</strong> ${item.note}<br>`;
-                    if (item.option) extrasHTML += `<strong>Option:</strong> ${item.option}`;
+                    if (item.options) {
+                        extrasHTML += `<strong>Options:</strong><br>`;
+                        for (const [key, val] of Object.entries(item.options)) {
+                            extrasHTML += `&nbsp;&nbsp;${key}: ${val}<br>`;
+                        }
+                    }
                     extrasHTML += `</div>`;
                 }
 
@@ -384,17 +389,17 @@
                                 const inspirationFile = document.getElementById('modalInspiration').files[0];
                                 const inspirationVal = inspirationFile ? inspirationFile.name : '';
                                 
-                                let extraOptions = `Finish: ${finishVal}`;
-                                if (baseColorVal) extraOptions += `<br>Base Color: ${baseColorVal}`;
-                                if (accentColorVal) extraOptions += `<br>Accent Color: ${accentColorVal}`;
-                                if (selectedFillings) extraOptions += `<br>Fillings: ${selectedFillings}`;
-                                if (inspirationVal) extraOptions += `<br>Inspiration: ${inspirationVal}`;
+                                let extraOptions = { "Finish": finishVal };
+                                if (baseColorVal) extraOptions["Base Color"] = baseColorVal;
+                                if (accentColorVal) extraOptions["Accent Color"] = accentColorVal;
+                                if (selectedFillings) extraOptions["Fillings"] = selectedFillings;
+                                if (inspirationVal) extraOptions["Inspiration"] = inspirationVal;
 
                                 cart.push({ 
                                     name: `${name} (${chosenSize.size})`, 
                                     imageSrc: imageSrc,
                                     note: noteVal,
-                                    option: extraOptions
+                                    options: extraOptions
                                 });
                                 updateCart();
                                 document.getElementById('productModal').style.display = 'none';
