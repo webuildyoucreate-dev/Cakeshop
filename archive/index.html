@@ -87,12 +87,17 @@
                 const itemEl = document.createElement('div');
                 itemEl.className = 'cart-item';
                 itemEl.innerHTML = `
-                    <img src="${item.imageSrc}" alt="${item.name}">
-                    <div class="cart-item-info">
-                        <div class="cart-item-title">${item.name}</div>
-                        <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                    <div class="cart-item-main">
+                        <img src="${item.imageSrc}" alt="${item.name}">
+                        <div class="cart-item-info">
+                            <div class="cart-item-title">${item.name}</div>
+                            <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                        </div>
+                        <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                     </div>
-                    <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
+                    <div class="cart-item-note">
+                        <textarea class="note-input" placeholder="Add special instructions (e.g., Happy Birthday written in frosting, allergy info)..." onchange="updateItemNote(${index}, this.value)">${item.note || ''}</textarea>
+                    </div>
                 `;
                 container.appendChild(itemEl);
             });
@@ -103,6 +108,10 @@
         window.removeFromCart = function(index) {
             cart.splice(index, 1);
             updateCart();
+        };
+
+        window.updateItemNote = function(index, value) {
+            cart[index].note = value;
         };
 
         document.addEventListener('DOMContentLoaded', () => {
