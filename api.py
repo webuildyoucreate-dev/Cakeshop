@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import json
 import sqlite3
+import time
 from datetime import datetime
 import uuid
 
@@ -44,7 +45,6 @@ init_db()
 
 class CartItem(BaseModel):
     name: str
-    imageSrc: str
     note: Optional[str] = None
     options: Optional[dict] = None
 
@@ -94,3 +94,23 @@ async def get_quotes():
         quotes.append(quote)
         
     return quotes
+
+
+@app.post("/api/upload_inspiration")
+async def upload_inspiration(file: UploadFile = File(...)):
+    import os
+    os.makedirs("images", exist_ok=True)
+    
+    num_id = int(time.time() * 1000)
+    
+    ext = os.path.splitext(file.filename)[1]
+    if not ext:
+        ext = ".png"
+        
+    filename = f"insp_{num_id}{ext}"
+    filepath = os.path.join("images", filename)
+    
+    with open(filepath, "wb") as f:
+        f.write(await file.read())
+        
+    return {"id": num_id, "filename": filename}

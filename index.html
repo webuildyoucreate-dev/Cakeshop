@@ -226,17 +226,73 @@
                 }
             });
 
-            document.getElementById('quoteForm').addEventListener('submit', (e) => {
+            document.getElementById('quoteForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                alert('Thank you! Your quote request has been sent.');
-                cart = []; // empty the cart
-                updateCart();
-                document.getElementById('requestQuoteModal').style.display = 'none';
-                e.target.reset(); // clear form
+                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerText;
+                submitBtn.innerText = 'Submitting...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Upload files first
+                    for (let item of cart) {
+                        if (item.inspirationFile) {
+                            const formData = new FormData();
+                            formData.append('file', item.inspirationFile);
+                            
+                            const uploadRes = await fetch('http://127.0.0.1:8000/api/upload_inspiration', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            if (uploadRes.ok) {
+                                const uploadData = await uploadRes.json();
+                                item.options["Inspiration ID"] = uploadData.id;
+                                // Optional: remove the old string name if you only want the ID
+                                // delete item.options["Inspiration"]; 
+                            }
+                        }
+                        // Remove the File object from the payload before sending to backend
+                        delete item.inspirationFile;
+                    }
+
+                    const quoteData = {
+                        name: document.getElementById('quoteName').value,
+                        email: document.getElementById('quoteEmail').value,
+                        phone: document.getElementById('quotePhone').value || null,
+                        date: document.getElementById('quoteDate').value,
+                        cart: cart
+                    };
+
+                    const response = await fetch('http://127.0.0.1:8000/api/quotes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(quoteData)
+                    });
+
+                    if (response.ok) {
+                        alert('Thank you! Your quote request has been sent successfully.');
+                        cart = []; // empty the cart
+                        updateCart();
+                        document.getElementById('requestQuoteModal').style.display = 'none';
+                        e.target.reset(); // clear form
+                    } else {
+                        throw new Error('Failed to submit quote');
+                    }
+                } catch (error) {
+                    console.error('Error submitting quote:', error);
+                    alert('There was an error submitting your quote. Please make sure the server is running and try again.');
+                } finally {
+                    submitBtn.innerText = originalBtnText;
+                    submitBtn.disabled = false;
+                }
             });
 
             // Fetch fillings
-            fetch('fillings.csv')
+            fetch('csv-folder/fillings.csv')
                 .then(res => res.text())
                 .then(text => {
                     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -270,7 +326,7 @@
                 })
                 .catch(err => console.error('Error loading fillings:', err));
 
-            fetch('menu-items.csv')
+            fetch('csv-folder/menu-items.csv')
                 .then(response => {
                     if (!response.ok) throw new Error('Network response was not ok');
                     return response.text();
@@ -399,7 +455,8 @@
                                     name: `${name} (${chosenSize.size})`, 
                                     imageSrc: imageSrc,
                                     note: noteVal,
-                                    options: extraOptions
+                                    options: extraOptions,
+                                    inspirationFile: inspirationFile
                                 });
                                 updateCart();
                                 document.getElementById('productModal').style.display = 'none';
