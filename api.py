@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import json
-import os
+import sqlite3
 from datetime import datetime
 import uuid
 
@@ -18,7 +18,27 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-QUOTES_FILE = "quotes.json"
+DB_FILE = "quotes.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS quotes (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT,
+            date TEXT NOT NULL,
+            cart TEXT NOT NULL,
+            submitted_at TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Initialize DB on startup
+init_db()
 
 # --- Data Models ---
 
@@ -26,7 +46,7 @@ class CartItem(BaseModel):
     name: str
     imageSrc: str
     note: Optional[str] = None
-    option: Optional[str] = None
+    options: Optional[dict] = None
 
 class QuoteRequest(BaseModel):
     name: str
@@ -39,36 +59,38 @@ class QuoteRequest(BaseModel):
 
 @app.post("/api/quotes")
 async def submit_quote(quote: QuoteRequest):
-    # Prepare the quote record
-    quote_data = quote.model_dump()
-    quote_data["id"] = str(uuid.uuid4())
-    quote_data["submitted_at"] = datetime.now().isoformat()
+    quote_id = str(uuid.uuid4())
+    submitted_at = datetime.now().isoformat()
+    cart_json = json.dumps([item.model_dump() for item in quote.cart])
     
-    quotes = []
-    # Load existing quotes if file exists
-    if os.path.exists(QUOTES_FILE):
-        try:
-            with open(QUOTES_FILE, "r") as f:
-                quotes = json.load(f)
-        except json.JSONDecodeError:
-            pass # File might be empty or corrupted, we'll overwrite it
-    
-    # Add new quote
-    quotes.append(quote_data)
-    
-    # Save back to file
-    with open(QUOTES_FILE, "w") as f:
-        json.dump(quotes, f, indent=4)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO quotes (id, name, email, phone, date, cart, submitted_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (quote_id, quote.name, quote.email, quote.phone, quote.date, cart_json, submitted_at))
+    conn.commit()
+    conn.close()
         
-    return {"message": "Quote request submitted successfully", "id": quote_data["id"]}
+    return {"message": "Quote request submitted successfully", "id": quote_id}
 
 
 @app.get("/api/quotes")
 async def get_quotes():
-    if os.path.exists(QUOTES_FILE):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM quotes')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    quotes = []
+    for row in rows:
+        quote = dict(row)
         try:
-            with open(QUOTES_FILE, "r") as f:
-                return json.load(f)
+            quote["cart"] = json.loads(quote["cart"])
         except json.JSONDecodeError:
-            return []
-    return []
+            quote["cart"] = []
+        quotes.append(quote)
+        
+    return quotes
