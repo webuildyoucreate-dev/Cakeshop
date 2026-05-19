@@ -34,10 +34,47 @@
                 <div class="modal-details">
                     <h2 id="modalTitle">Product Title</h2>
                     <select id="modalSizeSelector" class="size-selector" style="margin-bottom: 1rem;"></select>
-                    <p id="modalPrice" class="product-price">$0.00</p>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <textarea id="modalNote" class="note-input" placeholder="Add special instructions (e.g., Happy Birthday written in frosting, allergy info)..." style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 0.5rem; resize: vertical; min-height: 40px; font-family: inherit; font-size: 0.875rem;"></textarea>
+                        
+                        <div style="margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text-main);">Cake Fillings (Select up to 3):</div>
+                        <div id="fillingsContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-height: 120px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; background: rgba(255,255,255,0.5);">
+                            <!-- Populated via JS -->
+                        </div>
+
+                        <div style="margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text-main);">Cake Finish:</div>
+                        <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+                            <label style="font-size: 0.875rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" id="modalOptionButtercream" name="modalFinish" value="Buttercream" checked>
+                                Buttercream
+                            </label>
+                            <label style="font-size: 0.875rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" id="modalOptionFondant" name="modalFinish" value="Fondant">
+                                Fondant
+                            </label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.875rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.25rem;">Base Color:</label>
+                                <input type="text" id="modalBaseColor" placeholder="e.g. White" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); font-family: inherit; font-size: 0.875rem;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.875rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.25rem;">Accent Color:</label>
+                                <input type="text" id="modalAccentColor" placeholder="e.g. Gold" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); font-family: inherit; font-size: 0.875rem;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.875rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.25rem;">Inspiration Image (Optional):</label>
+                            <input type="file" id="modalInspiration" accept="image/*" style="width: 100%; font-family: inherit; font-size: 0.875rem;">
+                        </div>
+                    </div>
+
                     <p id="modalDescription">Description goes here.</p>
                     <button id="modalAddToCart" class="btn-add">
-                        <span>Add to Cart</span>
+                        <span>Add to Quote</span>
                     </button>
                 </div>
             </div>
@@ -47,7 +84,7 @@
     <!-- Cart Drawer -->
     <div id="cartDrawer" class="cart-drawer">
         <div class="cart-drawer-header">
-            <h2>Your Cart</h2>
+            <h2>Your Quote Request</h2>
             <button id="closeCartBtn" class="close-btn">&times;</button>
         </div>
         <div id="cartItemsContainer" class="cart-items">
@@ -55,14 +92,42 @@
             <p class="empty-cart-msg">Your cart is empty.</p>
         </div>
         <div class="cart-drawer-footer">
-            <div class="cart-total">
-                <span>Total:</span>
-                <span id="cartTotalAmount">$0.00</span>
-            </div>
-            <button class="btn-checkout">Checkout</button>
+            <button class="btn-checkout">Request Quote</button>
         </div>
     </div>
     <div id="cartOverlay" class="cart-overlay"></div>
+
+    <!-- Quote Request Modal -->
+    <div id="requestQuoteModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 2.5rem; text-align: left;">
+            <span class="close-modal" id="closeQuoteModal" style="top: 20px; right: 25px;">&times;</span>
+            <div class="modal-body" style="display: block;">
+                <h2 style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-main);">Request a Quote</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Please provide your contact details and event information. We will get back to you with a custom quote shortly.</p>
+                <form id="quoteForm">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="quoteName" required class="form-input" placeholder="Jane Doe">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="quoteEmail" required class="form-input" placeholder="jane@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" id="quotePhone" class="form-input" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 2rem;">
+                        <label class="form-label">Event Date</label>
+                        <input type="date" id="quoteDate" required class="form-input">
+                    </div>
+                    <button type="submit" class="btn-checkout" style="width: 100%; font-size: 1.1rem; padding: 1rem;">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script>
         let cart = [];
@@ -75,44 +140,40 @@
             countBadge.innerText = cart.length;
             
             if (cart.length === 0) {
-                container.innerHTML = '<p class="empty-cart-msg">Your cart is empty.</p>';
-                totalEl.innerText = '$0.00';
+                container.innerHTML = '<p class="empty-cart-msg">Your quote list is empty.</p>';
                 return;
             }
             
-            let total = 0;
             container.innerHTML = '';
             
             cart.forEach((item, index) => {
-                total += item.price;
                 const itemEl = document.createElement('div');
                 itemEl.className = 'cart-item';
+                let extrasHTML = '';
+                if (item.note || item.option) {
+                    extrasHTML = `<div class="cart-item-note" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 6px;">`;
+                    if (item.note) extrasHTML += `<strong>Note:</strong> ${item.note}<br>`;
+                    if (item.option) extrasHTML += `<strong>Option:</strong> ${item.option}`;
+                    extrasHTML += `</div>`;
+                }
+
                 itemEl.innerHTML = `
                     <div class="cart-item-main">
                         <img src="${item.imageSrc}" alt="${item.name}">
                         <div class="cart-item-info">
                             <div class="cart-item-title">${item.name}</div>
-                            <div class="cart-item-price">$${item.price.toFixed(2)}</div>
                         </div>
                         <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                     </div>
-                    <div class="cart-item-note">
-                        <textarea class="note-input" placeholder="Add special instructions (e.g., Happy Birthday written in frosting, allergy info)..." onchange="updateItemNote(${index}, this.value)">${item.note || ''}</textarea>
-                    </div>
+                    ${extrasHTML}
                 `;
                 container.appendChild(itemEl);
             });
-            
-            totalEl.innerText = '$' + total.toFixed(2);
         }
 
         window.removeFromCart = function(index) {
             cart.splice(index, 1);
             updateCart();
-        };
-
-        window.updateItemNote = function(index, value) {
-            cart[index].note = value;
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -139,6 +200,70 @@
                     document.getElementById('productModal').style.display = 'none';
                 }
             });
+
+            // Quote Modal Handlers
+            document.querySelector('.btn-checkout').addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Please add items to your quote request first.');
+                    return;
+                }
+                document.getElementById('cartDrawer').classList.remove('open');
+                document.getElementById('cartOverlay').classList.remove('open');
+                document.getElementById('requestQuoteModal').style.display = 'flex';
+            });
+
+            document.getElementById('closeQuoteModal').addEventListener('click', () => {
+                document.getElementById('requestQuoteModal').style.display = 'none';
+            });
+            window.addEventListener('click', (e) => {
+                if (e.target === document.getElementById('requestQuoteModal')) {
+                    document.getElementById('requestQuoteModal').style.display = 'none';
+                }
+            });
+
+            document.getElementById('quoteForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Thank you! Your quote request has been sent.');
+                cart = []; // empty the cart
+                updateCart();
+                document.getElementById('requestQuoteModal').style.display = 'none';
+                e.target.reset(); // clear form
+            });
+
+            // Fetch fillings
+            fetch('fillings.csv')
+                .then(res => res.text())
+                .then(text => {
+                    const lines = text.split('\n').filter(line => line.trim() !== '');
+                    let html = '';
+                    for (let i = 1; i < lines.length; i++) {
+                        const filling = lines[i].trim();
+                        if (filling) {
+                            html += `
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer;">
+                                    <input type="checkbox" value="${filling}" class="filling-checkbox">
+                                    ${filling}
+                                </label>
+                            `;
+                        }
+                    }
+                    document.getElementById('fillingsContainer').innerHTML = html;
+                    
+                    const checkboxes = document.querySelectorAll('.filling-checkbox');
+                    checkboxes.forEach(cb => {
+                        cb.addEventListener('change', function() {
+                            const checkedCount = document.querySelectorAll('.filling-checkbox:checked').length;
+                            if (checkedCount >= 3) {
+                                checkboxes.forEach(box => {
+                                    if (!box.checked) box.disabled = true;
+                                });
+                            } else {
+                                checkboxes.forEach(box => box.disabled = false);
+                            }
+                        });
+                    });
+                })
+                .catch(err => console.error('Error loading fillings:', err));
 
             fetch('menu-items.csv')
                 .then(response => {
@@ -178,7 +303,7 @@
                         
                         let selectOptions = '';
                         availableSizes.forEach((sz, idx) => {
-                            selectOptions += `<option value="${idx}">Size: ${sz.size} - $${sz.price.toFixed(2)}</option>`;
+                            selectOptions += `<option value="${idx}">Size: ${sz.size}</option>`;
                         });
                         
                         const article = document.createElement('article');
@@ -195,9 +320,8 @@
                                 </select>
                             </div>
                             <div class="product-footer">
-                                <span class="product-price" id="price-disp-${i}">$${availableSizes[0].price.toFixed(2)}</span>
-                                <button class="btn-add add-to-cart-btn" aria-label="Add ${name} to cart">
-                                    <span>Add to Cart</span>
+                                <button class="btn-add add-to-cart-btn" aria-label="Add ${name} to quote">
+                                    <span>Add to Quote</span>
                                     <svg viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-8.9-5h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.37-.66-.11-1.48-.87-1.48H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7l1.1-2z"/>
                                     </svg>
@@ -206,13 +330,6 @@
                         `;
 
                         const sizeSelect = article.querySelector('.size-selector');
-                        const priceDisp = article.querySelector(`#price-disp-${i}`);
-
-                        sizeSelect.addEventListener('change', (e) => {
-                            e.stopPropagation();
-                            const selIdx = e.target.value;
-                            priceDisp.innerText = `$${availableSizes[selIdx].price.toFixed(2)}`;
-                        });
 
                         // Add to cart functionality
                         const addBtn = article.querySelector('.add-to-cart-btn');
@@ -222,7 +339,6 @@
                             const chosenSize = availableSizes[selIdx];
                             cart.push({ 
                                 name: `${name} (${chosenSize.size})`, 
-                                price: chosenSize.price, 
                                 imageSrc: imageSrc 
                             });
                             updateCart();
@@ -238,27 +354,50 @@
                             const modalSelector = document.getElementById('modalSizeSelector');
                             modalSelector.innerHTML = selectOptions;
                             modalSelector.value = sizeSelect.value;
-                            
-                            const modalPriceDisp = document.getElementById('modalPrice');
-                            modalPriceDisp.innerText = `$${availableSizes[modalSelector.value].price.toFixed(2)}`;
 
                             modalSelector.onchange = (e) => {
                                 const selIdx = e.target.value;
-                                modalPriceDisp.innerText = `$${availableSizes[selIdx].price.toFixed(2)}`;
                                 sizeSelect.value = selIdx;
-                                priceDisp.innerText = `$${availableSizes[selIdx].price.toFixed(2)}`;
                             };
+                            
+                            document.getElementById('modalNote').value = '';
+                            document.getElementById('modalOptionButtercream').checked = true;
+                            document.getElementById('modalBaseColor').value = '';
+                            document.getElementById('modalAccentColor').value = '';
+                            document.getElementById('modalInspiration').value = '';
+                            
+                            document.querySelectorAll('.filling-checkbox').forEach(cb => {
+                                cb.checked = false;
+                                cb.disabled = false;
+                            });
                             
                             const modalBtn = document.getElementById('modalAddToCart');
                             modalBtn.onclick = () => {
                                 const selIdx = modalSelector.value;
                                 const chosenSize = availableSizes[selIdx];
+                                const noteVal = document.getElementById('modalNote').value;
+                                
+                                const selectedFillings = Array.from(document.querySelectorAll('.filling-checkbox:checked')).map(cb => cb.value).join(', ');
+                                const finishVal = document.querySelector('input[name="modalFinish"]:checked').value;
+                                const baseColorVal = document.getElementById('modalBaseColor').value.trim();
+                                const accentColorVal = document.getElementById('modalAccentColor').value.trim();
+                                const inspirationFile = document.getElementById('modalInspiration').files[0];
+                                const inspirationVal = inspirationFile ? inspirationFile.name : '';
+                                
+                                let extraOptions = `Finish: ${finishVal}`;
+                                if (baseColorVal) extraOptions += `<br>Base Color: ${baseColorVal}`;
+                                if (accentColorVal) extraOptions += `<br>Accent Color: ${accentColorVal}`;
+                                if (selectedFillings) extraOptions += `<br>Fillings: ${selectedFillings}`;
+                                if (inspirationVal) extraOptions += `<br>Inspiration: ${inspirationVal}`;
+
                                 cart.push({ 
                                     name: `${name} (${chosenSize.size})`, 
-                                    price: chosenSize.price, 
-                                    imageSrc: imageSrc 
+                                    imageSrc: imageSrc,
+                                    note: noteVal,
+                                    option: extraOptions
                                 });
                                 updateCart();
+                                document.getElementById('productModal').style.display = 'none';
                             };
 
                             document.getElementById('productModal').style.display = 'flex';
