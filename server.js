@@ -4,35 +4,41 @@ const path = require('path');
 
 const PORT = 3000;
 
-// 1. Create the server listener
+const mimeTypes = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.csv': 'text/csv',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml'
+};
+
 const server = http.createServer((req, res) => {
     console.log(`Received request for: ${req.url}`);
 
-    // 2. Route handling: check if user is at the homepage
-    if (req.url === '/' || req.url === '/index.html') {
-        const filePath = path.join(__dirname, 'index.html');
+    let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
+    let extname = String(path.extname(filePath)).toLowerCase();
+    let contentType = mimeTypes[extname] || 'application/octet-stream';
 
-        // 3. Read the HTML file from disk
-        fs.readFile(filePath, (err, content) => {
-            if (err) {
-                // Handle internal server error if file missing
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('500 Internal Server Error');
-                return;
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                res.writeHead(404, { 'Content-Type': 'text/html' });
+                res.end('<h1>404 Page Not Found</h1>', 'utf-8');
+            } else {
+                res.writeHead(500);
+                res.end(`Server Error: ${err.code}`);
             }
-            
-            // 4. Send successful headers and HTML content
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(content); 
-        });
-    } else {
-        // 5. Handle 404 Not Found for any other URL path
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end('<h1>404 Page Not Found</h1>');
-    }
+        } else {
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
+    });
 });
 
-// 6. Start listening for network traffic
 server.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
 });
