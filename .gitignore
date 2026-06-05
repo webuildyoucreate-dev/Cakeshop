@@ -2,3 +2,5 @@ quotes.db
 images
 archive
 secret.key
+__pycache__
+.vscode
