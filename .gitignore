@@ -4,3 +4,4 @@ archive
 secret.key
 __pycache__
 .vscode
+venv

@@ -5,33 +5,27 @@ st.set_page_config(
     layout="wide"
 )
 
+if "order_type" not in st.session_state:
+    st.session_state.order_type = None
+
+top_left, top_right = st.columns(2)
+
+with top_left:
+    if st.button("Wedding order", use_container_width=True):
+        st.session_state.order_type = "Wedding order"
+
+with top_right:
+    if st.button("Non-wedding order", use_container_width=True):
+        st.session_state.order_type = "Non-wedding order"
+
+if st.session_state.order_type:
+    st.info(f"Current order type: {st.session_state.order_type}")
+
+is_wedding_order = st.session_state.order_type == "Wedding order"
+
 st.title("DESSERTS BY DANA")
 
-# =====================================================
-# TOP CHECKBOXES
-# =====================================================
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-with c1:
-    time_confirmed = st.checkbox("Time Confirmed")
-
-with c2:
-    count_confirmed = st.checkbox("Count Confirmed")
-
-with c3:
-    invoice = st.checkbox("Invoice")
-
-with c4:
-    flower_reminder = st.checkbox("Flower/Topper/Stand Reminder")
-
-with c5:
-    save_top_tier = st.checkbox("Save Top Tier")
-
-with c6:
-    topper_venue = st.checkbox("Topper at Venue")
-
-st.divider()
 
 # =====================================================
 # CLIENT + VENUE INFORMATION
@@ -69,27 +63,30 @@ with left:
     with c2:
         delivery_time = st.text_input("Delivery Time")
 
-    photographer = st.text_input("Photographer")
-    wedding_colors = st.text_input("Wedding Colors")
+    is_pickup_order = pickup_delivery == "Pick-up"
+
+    if is_wedding_order:
+        photographer = st.text_input("Photographer")
+        wedding_colors = st.text_input("Wedding Colors")
 
 with right:
     st.markdown("## VENUE INFORMATION")
 
-    venue_name = st.text_input("Venue / Contact")
-    venue_address = st.text_input("Address")
-    city_state_zip = st.text_input("City / State / Zip")
+    if not is_pickup_order:
+        venue_name = st.text_input("Venue Name")
+        venue_address = st.text_input("Venue Address")
+        venue_city = st.text_input("Venue City")
+        venue_state = st.text_input("Venue State")
+        venue_zip = st.text_input("Venue Zip")
 
-    venue_contact = st.text_input("Contact Person / Phone")
+        venue_contact = st.text_input("Contact Person's Name")
+        venue_contact_phone = st.text_input("Contact Person's Phone")
 
-    c1, c2 = st.columns(2)
+    event_time = st.text_input("Event Time")
 
-    with c1:
+    if is_wedding_order:
         ceremony_time = st.text_input("Ceremony Time")
-
-    with c2:
-        event_time = st.text_input("Event Time")
-
-    florist = st.text_input("Florist")
+        florist = st.text_input("Florist")
 
     flowers_provided = st.radio(
         "Flowers Provided By Couple",
@@ -370,6 +367,12 @@ needed_client = st.checkbox("Items Needed From Client")
 ordered_dbd = st.checkbox("Items To Be Ordered By Desserts By Dana")
 items_received = st.checkbox("Items Received (Date / Initials / Item)")
 equipment_returned = st.checkbox("Equipment Rental Returned To DBD")
+time_confirmed = st.checkbox("Time Confirmed")
+count_confirmed = st.checkbox("Count Confirmed")
+invoice = st.checkbox("Invoice")
+flower_reminder = st.checkbox("Flower/Topper/Stand Reminder")
+save_top_tier = st.checkbox("Save Top Tier")
+topper_venue = st.checkbox("Topper at Venue")
 
 st.divider()
 
