@@ -123,9 +123,8 @@ for cake in range(1, cake_count + 1):
     row1 = st.columns(4)
 
     with row1[0]:
-        size = st.selectbox(
+        size = st.text_input(
             "Size",
-            [ "6 inch", "9 inch"],
             key=f"size_{cake}"
         )
 
