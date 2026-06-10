@@ -50,11 +50,23 @@ def handle_screens():
                 st.button("View Orders", on_click=lambda: st.session_state.update(screen="view_orders"))
             elif st.session_state.screen == "view_orders":
                 st.button("Create Order", on_click=lambda: st.session_state.update(screen="order_form"))
-        st.divider()
 
-    if st.session_state.username == "admin":
+    # Fetch roles for the logged in user
+    cursor.execute("SELECT store, manager, admin FROM users WHERE username = ?", (st.session_state.username,))
+    row = cursor.fetchone()
+    user_store = ""
+    user_manager = ""
+    is_admin = False
+    if row:
+        user_store, user_manager, admin_flag = row
+        is_admin = (admin_flag == 1 or st.session_state.username == "admin")
+
+    if is_admin:
         st.warning("Admin and manager features are to the left in the sidebar.")
         is_admin_screen()
+    elif user_manager:
+        st.warning("Manager features are to the left in the sidebar.")
+        is_manager_screen(user_manager)
 
     st.title("DESSERTS BY DANA")
 
@@ -496,9 +508,9 @@ def is_admin_screen():
                                 account_details = cursor.fetchone()
 
                                 if account_details[0] == "":
-                                    st.checkbox("Store Access(f)", value=False, key=username+"_Store_f")
-                                    st.checkbox("Store Access(m)", value=False, key=username+"_Store_m")
-                                    st.checkbox("Store Access(b)", value=False, key=username+"_Store_b")
+                                    st.checkbox("Store Employee Access(f)", value=False, key=username+"_Store_f")
+                                    st.checkbox("Store Employee Access(m)", value=False, key=username+"_Store_m")
+                                    st.checkbox("Store Employee Access(b)", value=False, key=username+"_Store_b")
                                 else:
                                     if "f" in account_details[0]:
                                         st.checkbox("Store Employee Access(f)", value=True, key=username+"_Store_f")
@@ -576,8 +588,8 @@ def is_admin_screen():
                                     st.warning(f"Are you sure you want to delete user '{username}'? This action cannot be undone.")
                                     if st.button("Yes, Delete User"):
                                         if username != "admin":
-                                            conn.close()
                                             cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+                                            conn.commit()
                                 confirm_delete()
 
         with st.popover("Add New User"):
@@ -594,22 +606,51 @@ def is_admin_screen():
                     st.success(f"Successfully added user '{new_username}' to the encrypted database!")
                 except Exception as e:
                     st.error(f"Error adding user: {e}")
-    is_manager_screen()
+    is_manager_screen("fmb")
 
-def is_manager_screen():
+def is_manager_screen(manager_stores):
     with st.sidebar:
         st.divider()
         st.write("Manager Panel")
-        cursor.execute("SELECT username FROM users")
-        manager_search_term = st.text_input("Search users:", placeholder="Type username...", key="manager_search")
-        usernames = [row[0] for row in cursor.fetchall() if manager_search_term.lower() in row[0].lower() or manager_search_term.lower() in row[0].lower()]
+        
+        # Fetch all users with their store assignments
+        cursor.execute("SELECT username, store FROM users")
+        rows = cursor.fetchall()
+        
+        # Normalize the manager's stores to a set of characters
+        mgr_stores = set((manager_stores or "").lower())
+        
+        # Filter to only employees assigned to the manager's stores
+        manager_employees = []
+        for username, store in rows:
+            emp_stores = set((store or "").lower())
+            if mgr_stores & emp_stores:
+                manager_employees.append((username, store))
+        
+        manager_search_term = st.text_input("Search employees:", placeholder="Type username...", key="manager_search")
+        
+        # Filter by search term
+        filtered_employees = [
+            (username, store)
+            for username, store in manager_employees
+            if manager_search_term.lower() in username.lower()
+        ]
+        
         with st.expander("Manager User View"):
-            for username in usernames:
+            if not filtered_employees:
+                st.write("No employees found.")
+            for username, store in filtered_employees:
                 with st.container(border=True):
-                    c1,c2 = st.columns(2)
+                    c1, c2, c3 = st.columns([2, 2, 2])
                     with c1:
                         st.write(username)
                     with c2:
-                        st.write("WIP")
+                        store_display = ", ".join([char.upper() for char in store if char])
+                        st.write(f"Stores: {store_display}")
+                    with c3:
+                        if st.button("View Orders", key=f"view_orders_{username}"):
+                            st.session_state.screen = "view_orders"
+                            st.session_state.view_orders_employee = username
+                            st.rerun()
 
 login_screen()

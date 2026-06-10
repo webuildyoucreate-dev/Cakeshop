@@ -1,6 +1,6 @@
 import streamlit as st
 
-def OrderForm():
+def OrderForm(username="Guest"):
 
     st.set_page_config(
         page_title="Desserts By Dana - Cake Order Form",
@@ -411,7 +411,9 @@ def OrderForm():
                 st.success("Order information saved.")
 
     st.divider()
+    st.write(username)
 
-OrderForm()
+if __name__ == "__main__":
+    OrderForm()
 
 
