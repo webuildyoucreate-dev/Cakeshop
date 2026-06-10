@@ -10,15 +10,14 @@ except Exception as e:
     st.stop()
 
 cipher_suite = Fernet(secret_key)
+conn = sqlite3.connect("app.db")
+cursor = conn.cursor()
 
 def login(user, pwd):
     try:
-        conn = sqlite3.connect("app.db")
-        cursor = conn.cursor()
         # Get the encrypted password from database
         cursor.execute("SELECT pwd FROM users WHERE username = ?", (user,))
         row = cursor.fetchone()
-        conn.close()
         
         if row is not None:
             encrypted_pwd = row[0]
@@ -34,6 +33,35 @@ def login(user, pwd):
 def logout():
     st.session_state.authenticated = False
     #st.rerun()
+
+def handle_screens():
+    st.set_page_config(
+        page_title="Desserts By Dana - Cake Order Form",
+        layout="wide"
+    )
+
+    with st.sidebar:
+        st.title(f"Logged in as: {st.session_state.username}")
+        sc1,sc2 = st.columns(2)
+        with sc1:
+            st.button("Logout", on_click=logout)
+        with sc2:
+            if st.session_state.screen == "order_form":
+                st.button("View Orders", on_click=lambda: st.session_state.update(screen="view_orders"))
+            elif st.session_state.screen == "view_orders":
+                st.button("Create Order", on_click=lambda: st.session_state.update(screen="order_form"))
+        st.divider()
+
+    if st.session_state.username == "admin":
+        st.warning("Admin and manager features are to the left in the sidebar.")
+        is_admin_screen()
+
+    st.title("DESSERTS BY DANA")
+
+    if st.session_state.screen == "order_form":
+        order_form_screen()
+    else:
+        st.error("Unknown screen. Please select a valid option from the sidebar.")
 
 def login_screen():
     
@@ -53,30 +81,13 @@ def login_screen():
             else:
                 st.error("Invalid username or password.")
     else:
-        logged_in_screen()
+        if "screen" not in st.session_state:
+            st.session_state.screen = "order_form"
+        handle_screens()
         
+def order_form_screen():
 
-def logged_in_screen():
-
-    st.set_page_config(
-        page_title="Desserts By Dana - Cake Order Form",
-        layout="wide"
-    )
-
-    with st.sidebar:
-        st.title(f"Logged in as: {st.session_state.username}")
-        sc1,sc2 = st.columns(2)
-        with sc1:
-            st.button("Logout", on_click=logout)
-        with sc2:
-            st.button("View Orders")
-        st.divider()
-
-    if st.session_state.username == "admin":
-        st.warning("Admin and manager features are to the left in the sidebar.")
-        is_admin_screen()
-
-    st.title("DESSERTS BY DANA")
+    
 
     # =====================================================
     # TOP CHECKBOXES
@@ -468,9 +479,137 @@ def logged_in_screen():
 def is_admin_screen():
     with st.sidebar:
         st.write("Admin Panel")
+        cursor.execute("SELECT username FROM users")
+        admin_search_term = st.text_input("Search users:", placeholder="Type username...", key="admin_search")
+        usernames = [row[0] for row in cursor.fetchall() if admin_search_term.lower() in row[0].lower()]
+        with st.expander("Admin User View"):
+            with st.container(height=300, border=False):
+                for username in usernames:
+                    with st.container(border=True):
+                        c1,c2,c3= st.columns(3)
+                        with c1:
+                            st.write(username)
+                        with c2:
+                            with st.popover("Edit User", key = "edit_" + username):
+                                st.write("Edit user details here")
+                                cursor.execute("SELECT store, manager, admin FROM users WHERE username = ?", (username,))
+                                account_details = cursor.fetchone()
+
+                                if account_details[0] == "":
+                                    st.checkbox("Store Access(f)", value=False, key=username+"_Store_f")
+                                    st.checkbox("Store Access(m)", value=False, key=username+"_Store_m")
+                                    st.checkbox("Store Access(b)", value=False, key=username+"_Store_b")
+                                else:
+                                    if "f" in account_details[0]:
+                                        st.checkbox("Store Employee Access(f)", value=True, key=username+"_Store_f")
+                                    else:
+                                        st.checkbox("Store Employee Access(f)", value=False, key=username+"_Store_f")
+                                    if "m" in account_details[0]:
+                                        st.checkbox("Store Employee Access(m)", value=True, key=username+"_Store_m")
+                                    else:
+                                        st.checkbox("Store Employee Access(m)", value=False, key=username+"_Store_m")
+                                    if "b" in account_details[0]:
+                                        st.checkbox("Store Employee Access(b)", value=True, key=username+"_Store_b")
+                                    else:
+                                        st.checkbox("Store Employee Access(b)", value=False, key=username+"_Store_b")
+
+                                if account_details[1] == "":
+                                    st.checkbox("Store Manager Access(f)", value=False, key=username+"_m_Store_f")
+                                    st.checkbox("Store Manager Access(m)", value=False, key=username+"_m_Store_m")
+                                    st.checkbox("Store Manager Access(b)", value=False, key=username+"_m_Store_b")
+                                else:
+                                    if "f" in account_details[1]:
+                                        st.checkbox("Store Manager Access(f)", value=True, key=username+"_m_Store_f")
+                                    else:
+                                        st.checkbox("Store Manager Access(f)", value=False, key=username+"_m_Store_f")
+                                    if "m" in account_details[1]:
+                                        st.checkbox("Store Manager Access(m)", value=True, key=username+"_m_Store_m")
+                                    else:
+                                        st.checkbox("Store Manager Access(m)", value=False, key=username+"_m_Store_m")
+                                    if "b" in account_details[1]:
+                                        st.checkbox("Store Manager Access(b)", value=True, key=username+"_m_Store_b")
+                                    else:
+                                        st.checkbox("Store Manager Access(b)", value=False, key=username+"_m_Store_b")
+                                
+                                if account_details[2] == 0:
+                                    st.checkbox("Admin", value=False, key=username+"_admin" )
+                                elif account_details[2] == 1:
+                                    st.checkbox("Admin", value=True, key=username+"_admin" )
+
+                                if st.button("Change Password", key="change_pwd_" + username):
+                                    pass
+
+                                if st.button("Save Changes", key="save_" + username):
+                                    new_store = ""
+                                    new_manager = ""
+                                    new_admin = 0
+
+                                    if st.session_state[username+"_Store_f"]:
+                                        new_store += "f"
+                                    if st.session_state[username+"_Store_m"]:
+                                        new_store += "m"
+                                    if st.session_state[username+"_Store_b"]:
+                                        new_store += "b"
+
+                                    if st.session_state[username+"_m_Store_f"]:
+                                        new_manager += "f"
+                                    if st.session_state[username+"_m_Store_m"]:
+                                        new_manager += "m"
+                                    if st.session_state[username+"_m_Store_b"]:
+                                        new_manager += "b"
+
+                                    if st.session_state[username+"_admin"]:
+                                        new_admin = 1
+
+                                    try:
+                                        cursor.execute(
+                                            """UPDATE users SET store=?, manager=?, admin=? WHERE username=?""",
+                                            (new_store, new_manager, new_admin, username)
+                                        )
+                                        conn.commit()
+                                    except Exception as e:
+                                        st.error(f"Error updating user: {e}")
+                        with c3:
+                            if st.button("Delete User", key="delete_" + username):
+                                @st.dialog("Confirm Delete")
+                                def confirm_delete():
+                                    st.warning(f"Are you sure you want to delete user '{username}'? This action cannot be undone.")
+                                    if st.button("Yes, Delete User"):
+                                        if username != "admin":
+                                            conn.close()
+                                            cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+                                confirm_delete()
+
+        with st.popover("Add New User"):
+            new_username = st.text_input("New Username")
+            new_password = st.text_input("New Password", type="password")
+            if st.button("Create User"):
+                hashed_password = cipher_suite.encrypt(new_password.encode('utf-8'))
+                try:
+                    cursor.execute(
+                        "INSERT INTO users (username, pwd) VALUES (?, ?)", 
+                        (new_username, hashed_password)
+                    )
+                    conn.commit()
+                    st.success(f"Successfully added user '{new_username}' to the encrypted database!")
+                except Exception as e:
+                    st.error(f"Error adding user: {e}")
     is_manager_screen()
 
 def is_manager_screen():
     with st.sidebar:
+        st.divider()
         st.write("Manager Panel")
+        cursor.execute("SELECT username FROM users")
+        manager_search_term = st.text_input("Search users:", placeholder="Type username...", key="manager_search")
+        usernames = [row[0] for row in cursor.fetchall() if manager_search_term.lower() in row[0].lower() or manager_search_term.lower() in row[0].lower()]
+        with st.expander("Manager User View"):
+            for username in usernames:
+                with st.container(border=True):
+                    c1,c2 = st.columns(2)
+                    with c1:
+                        st.write(username)
+                    with c2:
+                        st.write("WIP")
+
 login_screen()

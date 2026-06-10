@@ -5,3 +5,4 @@ secret.key
 __pycache__
 .vscode
 venv
+test.py
