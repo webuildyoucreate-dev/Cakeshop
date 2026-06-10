@@ -97,170 +97,168 @@ with right:
 st.divider()
 
 # =====================================================
-# CAKES
+# ITEMS (Cupcakes, Cakes, Tiered Cakes)
 # =====================================================
 
-st.markdown("## CAKES")
+st.markdown("## ITEMS")
 
-cake_count = st.number_input(
-    "Number of Cakes",
-    min_value=1,
-    max_value=100,
-    value=1,
-    step=1
-)
+# Shared option lists
+FLAVORS = [
+    "Almond","Amaretto","Apple Spice","Banana","Carrot","Chocolate",
+    "Chocolate Banana","Chocolate Hazelnut","Chocolate Mint","Cookie Butter",
+    "Cookies 'n Creme","Funfetti","Hazelnut","Key Lime","Lemon","Marble",
+    "Mexican Chocolate","Orange Creamsicle","Pink Champagne","Pumpkin",
+    "Raspberry","Red Velvet","Strawberry","Strawberry Banana","Sweet Potato",
+    "Vanilla","Vanilla Chocolate Chip"
+]
 
-cake_data = []
+FILLINGS = [
+    "Italian Buttercream","Almond Cream","Banana Cream","Bavarian Cream w/Strawberries",
+    "Cannoli Cream","Caramel","Caramelized Pineapple","Chambord Buttercream",
+    "Chocolate Caramel Mousse","Chocolate Chambord Mousse","Chocolate Mousse",
+    "Cookie Butter Mousse","Cream Cheese","Grand Marnier","Lemon Curd",
+    "Lemon Curd with Blueberries","Mandarin Orange Segment","Mocha Mousse",
+    "Nutella Mousse","Orange Marmalade","Peanut Butter Mousse","Pistachio Mousse",
+    "Raspberry Preserves","Salted Chocolate Caramel Mousse","Strawberry Cream Cheese",
+    "Strawberry Preserves","Tiramisu Mousse","White Chocolate Mousse"
+]
 
-for cake in range(1, cake_count + 1):
+if "item_count" not in st.session_state:
+    st.session_state.item_count = 1
 
-    st.markdown(f"### Cake {cake}")
+items_data = []
 
-    # -------------------------------------------------
-    # Cake Information
-    # -------------------------------------------------
+for item in range(1, st.session_state.item_count + 1):
+    st.markdown(f"### Item {item}")
 
-    row1 = st.columns(4)
-
-    with row1[0]:
-        size = st.text_input(
-            "Size",
-            key=f"size_{cake}"
-        )
-
-    with row1[1]:
-        shape = st.text_input(
-            "Shape",
-            key=f"shape_{cake}"
-        )
-
-    with row1[2]:
-        flavor = st.selectbox(
-            "Flavor",
-            [
-                "Almond",
-                "Amaretto",
-                "Apple Spice",
-                "Banana",
-                "Carrot",
-                "Chocolate",
-                "Chocolate Banana",
-                "Chocolate Hazelnut",
-                "Chocolate Mint",
-                "Cookie Butter",
-                "Cookies 'n Creme",
-                "Funfetti",
-                "Hazelnut",
-                "Key Lime",
-                "Lemon",
-                "Marble",
-                "Mexican Chocolate",
-                "Orange Creamsicle",
-                "Pink Champagne",
-                "Pumpkin",
-                "Raspberry",
-                "Red Velvet",
-                "Strawberry",
-                "Strawberry Banana",
-                "Sweet Potato",
-                "Vanilla",
-                "Vanilla Chocolate Chip"
-            ],
-            key=f"flavor_{cake}"
+    item_type = st.selectbox(
+        "Item Type",
+        ["Cake", "Cupcake", "Tiered Cake", "Other"],
+        key=f"item_type_{item}"
     )
 
-    with row1[3]:
-        filling = st.selectbox(
-            "Filling",
-            [
-                "Italian Buttercream",
-                "Almond Cream",
-                "Banana Cream",
-                "Bavarian Cream w/Strawberries",
-                "Cannoli Cream",
-                "Caramel",
-                "Caramelized Pineapple",
-                "Chambord Buttercream",
-                "Chocolate Caramel Mousse",
-                "Chocolate Chambord Mousse",
-                "Chocolate Mousse",
-                "Cookie Butter Mousse",
-                "Cream Cheese",
-                "Grand Marnier",
-                "Lemon Curd",
-                "Lemon Curd with Blueberries",
-                "Mandarin Orange Segment",
-                "Mocha Mousse",
-                "Nutella Mousse"
-                "Orange Marmalade",
-                "Peanut Butter Mousse",
-                "Pistachio Mousse",
-                "Raspberry Preserves",
-                "Salted Chocolate Caramel Mousse",
-                "Strawberry Cream Cheese",
-                "Strawberry Preserves",
-                "Tiramisu Mousse",
-                "White Chocolate Mousse",
+    if item_type == "Cupcake":
+        row = st.columns(3)
+        with row[0]:
+            quantity = st.number_input("Quantity", min_value=1, step=1, key=f"cup_qty_{item}")
+        with row[1]:
+            flavor = st.selectbox("Flavor", FLAVORS, key=f"flavor_{item}")
+        with row[2]:
+            frosting = st.text_input("Frosting", key=f"frosting_{item}")
 
-            ],
-            key=f"filling_{cake}"
-        )
+        design = st.text_area("Design Details", key=f"design_{item}", height=80)
 
-    # -------------------------------------------------
-    # Appearance
-    # -------------------------------------------------
+        items_data.append({
+            "item_number": item,
+            "type": "Cupcake",
+            "quantity": quantity,
+            "flavor": flavor,
+            "frosting": frosting,
+            "design_details": design
+        })
 
-    row2 = st.columns(3)
+    elif item_type == "Other":
+        row = st.columns(4)
+        with row[0]:
+            type = st.text_input("Type of Item", key=f"other_type_{item}")
+        with row[1]:
+            details = st.text_input("Item Details", key=f"other_details_{item}")
+        with row[2]:
+            flavor = st.text_input("Flavor", key=f"other_flavor_{item}")
+        with row[3]:
+            quantity = st.number_input("Quantity", min_value=1, step=1, key=f"other_qty_{item}")
+        items_data.append({
+            "item_number": item,
+            "type": "Other",
+            "other_type": type,
+            "details": details,
+            "flavor": flavor,
+            "quantity": quantity
+        })
+        
 
-    with row2[0]:
-        finish = st.selectbox(
-            "Finish",
-            [
-                "Buttercream",
-                "Fondant",
-            ],
-            key=f"finish_{cake}"
-        )
+    elif item_type == "Cake":
+        row1 = st.columns(4)
+        with row1[0]:
+            size = st.text_input("Size", key=f"size_{item}")
+        with row1[1]:
+            shape = st.text_input("Shape", key=f"shape_{item}")
+        with row1[2]:
+            flavor = st.selectbox("Flavor", FLAVORS, key=f"flavor_{item}")
+        with row1[3]:
+            filling = st.selectbox("Filling", FILLINGS, key=f"filling_{item}")
 
-    with row2[1]:
-        base_color = st.text_input(
-            "Base Color",
-            key=f"base_color_{cake}"
-        )
+        row2 = st.columns(3)
+        with row2[0]:
+            finish = st.selectbox("Finish", ["Buttercream", "Fondant"], key=f"finish_{item}")
+        with row2[1]:
+            base_color = st.text_input("Base Color", key=f"base_color_{item}")
+        with row2[2]:
+            accent_color = st.text_input("Accent Color", key=f"accent_color_{item}")
 
-    with row2[2]:
-        accent_color = st.text_input(
-            "Accent Color",
-            key=f"accent_color_{cake}"
-        )
+        design = st.text_area("Cake Design Details", key=f"design_{item}", height=100)
 
-    # -------------------------------------------------
-    # Cake Design Details
-    # -------------------------------------------------
+        items_data.append({
+            "item_number": item,
+            "type": "Cake",
+            "size": size,
+            "shape": shape,
+            "flavor": flavor,
+            "filling": filling,
+            "finish": finish,
+            "base_color": base_color,
+            "accent_color": accent_color,
+            "design_details": design
+        })
 
-    cake_design = st.text_area(
-        "Cake Design Details",
-        key=f"design_{cake}",
-        height=100
-    )
+    elif item_type == "Tiered Cake":
+        tiers = st.number_input("Number of Tiers", min_value=2, max_value=10, value=2, step=1, key=f"tiers_{item}")
 
-    # -------------------------------------------------
-    # Store Cake Data
-    # -------------------------------------------------
+        tiers_info = []
+        for t in range(1, tiers + 1):
+            with st.expander(f"Tier {t}"):
+                tier_size = st.text_input("Tier Size (e.g. 6\" round)", key=f"tier_{item}_{t}_size")
+                tier_servings = st.number_input("Tier Servings", min_value=0, step=1, key=f"tier_{item}_{t}_servings")
+                tier_flavor = st.selectbox("Flavor", FLAVORS, key=f"tier_{item}_{t}_flavor")
+                tier_filling = st.selectbox("Filling", FILLINGS, key=f"tier_{item}_{t}_filling")
+                tier_finish = st.selectbox("Finish", ["Buttercream", "Fondant"], key=f"tier_{item}_{t}_finish")
+                tier_base_color = st.text_input("Base Color", key=f"tier_{item}_{t}_base_color")
+                tier_accent_color = st.text_input("Accent Color", key=f"tier_{item}_{t}_accent_color")
+                tiers_info.append({
+                    "tier": t,
+                    "size": tier_size,
+                    "servings": tier_servings,
+                    "flavor": tier_flavor,
+                    "filling": tier_filling,
+                    "finish": tier_finish,
+                    "base_color": tier_base_color,
+                    "accent_color": tier_accent_color
+                })
 
-    cake_data.append({
-        "cake_number": cake,
-        "size": size,
-        "shape": shape,
-        "flavor": flavor,
-        "filling": filling,
-        "finish": finish,
-        "base_color": base_color,
-        "accent_color": accent_color,
-        "design_details": cake_design
-    })
+        design = st.text_area("Tiered Cake Design Details", key=f"design_{item}", height=140)
+
+        items_data.append({
+            "item_number": item,
+            "type": "Tiered Cake",
+            "tiers": tiers,
+            "tiers_info": tiers_info,
+            "design_details": design
+        })
 
     st.markdown("---")
+
+# Buttons to add or remove an item from the items section
+col_add, col_remove = st.columns([1, 1])
+with col_add:
+    if st.button("Add Item", key="add_item"):
+        st.session_state.item_count += 1
+        st.rerun()
+
+with col_remove:
+    if st.button("Remove Item", key="remove_item"):
+        if st.session_state.item_count > 1:
+            st.session_state.item_count -= 1
+        st.rerun()
 
 # =====================================================
 # OVERALL ORDER NOTES
@@ -357,25 +355,6 @@ with right:
 st.divider()
 
 # =====================================================
-# CHECKLIST
-# =====================================================
-
-st.markdown("## Checklist")
-
-needed_client = st.checkbox("Items Needed From Client")
-ordered_dbd = st.checkbox("Items To Be Ordered By Desserts By Dana")
-items_received = st.checkbox("Items Received (Date / Initials / Item)")
-equipment_returned = st.checkbox("Equipment Rental Returned To DBD")
-time_confirmed = st.checkbox("Time Confirmed")
-count_confirmed = st.checkbox("Count Confirmed")
-invoice = st.checkbox("Invoice")
-flower_reminder = st.checkbox("Flower/Topper/Stand Reminder")
-save_top_tier = st.checkbox("Save Top Tier")
-topper_venue = st.checkbox("Topper at Venue")
-
-st.divider()
-
-# =====================================================
 # CIRCLE LOCATION
 # =====================================================
 
@@ -390,8 +369,46 @@ circle_location = st.radio(
 st.divider()
 
 # =====================================================
-# SAVE BUTTON
+# CHECKLIST (form with conditional required fields)
 # =====================================================
 
-if st.button("Save Order"):
-    st.success("Order information saved.")
+st.markdown("## Checklist")
+
+with st.form("checklist_form"):
+    needed_client = st.checkbox("Items Needed From Client")
+    ordered_dbd = st.checkbox("Items To Be Ordered By Desserts By Dana")
+    items_received = st.checkbox("Items Received (Date / Initials / Item)")
+    equipment_returned = st.checkbox("Equipment Rental Returned To DBD")
+    time_confirmed = st.checkbox("Time Confirmed")
+    count_confirmed = st.checkbox("Count Confirmed")
+    invoice = st.checkbox("Invoice")
+    flower_reminder = st.checkbox("Flower/Topper/Stand Reminder")
+    save_top_tier = st.checkbox("Save Top Tier")
+    topper_venue = st.checkbox("Topper at Venue")
+
+    submit = st.form_submit_button("Save Order")
+
+    if submit:
+        # Determine which checklist items are required
+        required = ["time_confirmed", "count_confirmed"]
+        if is_wedding_order:
+            required += ["save_top_tier", "topper_venue"]
+
+        field_map = {
+            "time_confirmed": time_confirmed,
+            "count_confirmed": count_confirmed,
+            "save_top_tier": save_top_tier,
+            "topper_venue": topper_venue,
+        }
+
+        missing = [name for name in required if not field_map.get(name)]
+        if missing:
+            labels = [name.replace("_", " ").title() for name in missing]
+            st.error(f"Please complete required checklist items: {', '.join(labels)}")
+        else:
+            st.success("Order information saved.")
+
+st.divider()
+
+
+
