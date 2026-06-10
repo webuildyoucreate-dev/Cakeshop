@@ -16,9 +16,6 @@ cipher_suite = Fernet(secret_key)
 conn = sqlite3.connect("app.db")
 cursor = conn.cursor()
 
-def logout():
-    st.session_state.authenticated = False
-
 def handle_screens():
     st.set_page_config(
         page_title="Desserts By Dana - Cake Order Form",
@@ -29,7 +26,7 @@ def handle_screens():
         st.title(f"Logged in as: {st.session_state.username}")
         sc1,sc2 = st.columns(2)
         with sc1:
-            st.button("Logout", on_click=logout)
+            st.button("Logout", on_click=lambda: st.session_state.update(authenticated=False))
         with sc2:
             if st.session_state.screen == "order_form":
                 st.button("View Orders", on_click=lambda: st.session_state.update(screen="view_orders"))
