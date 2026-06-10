@@ -1,6 +1,9 @@
 import streamlit as st
+import sqlite3
+import json
+from datetime import datetime
 
-def OrderForm(username="Guest"):
+def MakeOrderForm(username="Guest"):
 
     st.set_page_config(
         page_title="Desserts By Dana - Cake Order Form",
@@ -376,7 +379,7 @@ def OrderForm(username="Guest"):
 
     st.markdown("## Checklist")
 
-    with st.form("checklist_form"):
+    with st.form("checklist_form",border=False):
         needed_client = st.checkbox("Items Needed From Client")
         ordered_dbd = st.checkbox("Items To Be Ordered By Desserts By Dana")
         items_received = st.checkbox("Items Received (Date / Initials / Item)")
@@ -408,10 +411,142 @@ def OrderForm(username="Guest"):
                 labels = [name.replace("_", " ").title() for name in missing]
                 st.error(f"Please complete required checklist items: {', '.join(labels)}")
             else:
-                st.success("Order information saved.")
+                # Collect all order data into a dict
+                order_data = {
+                    "order_type": st.session_state.order_type,
+                    "client": {
+                        "name": client_name,
+                        "phone": phone,
+                        "email": email,
+                    },
+                    "event_details": {
+                        "date": str(event_date),
+                        "guest_count": guest_count,
+                        "pickup_delivery": pickup_delivery,
+                        "delivery_time": delivery_time if not is_pickup_order else "",
+                        "photographer": photographer if is_wedding_order else "",
+                        "wedding_colors": wedding_colors if is_wedding_order else "",
+                        "event_time": event_time,
+                        "ceremony_time": ceremony_time if is_wedding_order else "",
+                        "florist": florist if is_wedding_order else "",
+                        "flowers_provided": flowers_provided,
+                    },
+                    "venue": {
+                        "name": venue_name if not is_pickup_order else "",
+                        "address": venue_address if not is_pickup_order else "",
+                        "city": venue_city if not is_pickup_order else "",
+                        "state": venue_state if not is_pickup_order else "",
+                        "zip": venue_zip if not is_pickup_order else "",
+                        "contact_name": venue_contact if not is_pickup_order else "",
+                        "contact_phone": venue_contact_phone if not is_pickup_order else "",
+                    },
+                    "items": items_data,
+                    "overall_design_notes": design_details,
+                    "pricing": {
+                        "cake_price": cake_price,
+                        "delivery_fee": delivery_fee,
+                        "grand_total": grand_total,
+                        "equipment_rental": equipment_rental,
+                        "deposit_amount": deposit_amount,
+                        "balance_due": balance_due,
+                        "due_dates": due_dates,
+                        "paid_in_full": paid_in_full,
+                        "order_taken_by": order_taken_by,
+                        "order_date": str(order_date),
+                    },
+                    "decor": {
+                        "flowers_here": flowers_here,
+                        "other_decor": other_decor,
+                        "cake_stand": cake_stand,
+                    },
+                    "circle_location": circle_location,
+                    "checklist": {
+                        "needed_client": needed_client,
+                        "ordered_dbd": ordered_dbd,
+                        "items_received": items_received,
+                        "equipment_returned": equipment_returned,
+                        "time_confirmed": time_confirmed,
+                        "count_confirmed": count_confirmed,
+                        "invoice": invoice,
+                        "flower_reminder": flower_reminder,
+                        "save_top_tier": save_top_tier,
+                        "topper_venue": topper_venue,
+                    }
+                }
+                
+                try:
+                    conn = sqlite3.connect("app.db")
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "INSERT INTO orders (author, `time created`, json) VALUES (?, ?, ?)",
+                        (username, datetime.now().isoformat(), json.dumps(order_data))
+                    )
+                    conn.commit()
+                    conn.close()
+                    st.success("Order information saved.")
+                except Exception as e:
+                    st.error(f"Error saving order: {e}")
 
     st.divider()
     st.write(username)
+
+def ViewOrderForm():
+    st.title("Desserts By Dana - Order Viewer")
+
+    def load_orders():
+        try:
+            conn = sqlite3.connect("app.db")
+            cursor = conn.cursor()
+            cursor.execute("SELECT author, `time created`, json FROM orders ORDER BY `time created` DESC")
+            rows = cursor.fetchall()
+            conn.close()
+            return rows
+        except Exception as e:
+            st.error(f"Error loading from database: {e}")
+            return []
+
+    orders = load_orders()
+
+    if not orders:
+        st.info("No orders found in the database.")
+    else:
+        for idx, (author, time_created, order_json_str) in enumerate(orders):
+            try:
+                order_data = json.loads(order_json_str)
+            except Exception as e:
+                order_data = {"error": f"Invalid JSON: {e}", "raw": order_json_str}
+                
+            order_type = order_data.get('order_type', 'Unknown Type')
+            client_name = order_data.get('client', {}).get('name', 'Unknown Client')
+            event_date = order_data.get('event_details', {}).get('date', 'Unknown Date')
+            
+            with st.expander(f"Order #{len(orders)-idx} | {client_name} | {order_type} | {event_date}"):
+                st.markdown(f"**Author:** {author} | **Created At:** {time_created}")
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.subheader("Client Information")
+                    client = order_data.get('client', {})
+                    st.write(f"**Name:** {client.get('name', '')}")
+                    st.write(f"**Phone:** {client.get('phone', '')}")
+                    st.write(f"**Email:** {client.get('email', '')}")
+                    
+                with col2:
+                    st.subheader("Event Details")
+                    events = order_data.get('event_details', {})
+                    st.write(f"**Date:** {events.get('date', '')}")
+                    st.write(f"**Guest Count:** {events.get('guest_count', 0)}")
+                    st.write(f"**Delivery/Pickup:** {events.get('pickup_delivery', '')}")
+                    
+                with col3:
+                    st.subheader("Pricing")
+                    pricing = order_data.get('pricing', {})
+                    st.write(f"**Grand Total:** ${pricing.get('grand_total', 0)}")
+                    st.write(f"**Balance Due:** ${pricing.get('balance_due', 0)}")
+                
+                st.divider()
+                st.subheader("Raw Order Data")
+                st.json(order_data)
 
 if __name__ == "__main__":
     OrderForm()

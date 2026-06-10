@@ -1,7 +1,9 @@
 import streamlit as st
 import sqlite3
 from cryptography.fernet import Fernet
-from components.OrderForm import OrderForm
+
+from components.OrderForm import MakeOrderForm, ViewOrderForm
+from components.Login import Login
 
 try:
     with open("secret.key", "rb") as key_file:
@@ -13,23 +15,6 @@ except Exception as e:
 cipher_suite = Fernet(secret_key)
 conn = sqlite3.connect("app.db")
 cursor = conn.cursor()
-
-def login(user, pwd):
-    try:
-        # Get the encrypted password from database
-        cursor.execute("SELECT pwd FROM users WHERE username = ?", (user,))
-        row = cursor.fetchone()
-        
-        if row is not None:
-            encrypted_pwd = row[0]
-            # Decrypt and compare
-            decrypted_pwd = cipher_suite.decrypt(encrypted_pwd).decode('utf-8')
-            if decrypted_pwd == pwd:
-                return True
-        return False
-    except Exception as e:
-        st.error(f"Login error: {e}")
-        return False
 
 def logout():
     st.session_state.authenticated = False
@@ -71,7 +56,9 @@ def handle_screens():
     st.title("DESSERTS BY DANA")
 
     if st.session_state.screen == "order_form":
-        OrderForm(st.session_state.username)
+        MakeOrderForm(st.session_state.username)
+    elif st.session_state.screen == "view_orders":
+        ViewOrderForm()
     else:
         st.error("Unknown screen. Please select a valid option from the sidebar.")
 
@@ -85,7 +72,7 @@ def login_screen():
         password = st.text_input("Password", type="password")
         
         if st.button("Login"):
-            if login(username, password):
+            if Login(username, password, cursor, cipher_suite):
                 st.session_state.authenticated = True
                 st.session_state.username = username
                 st.success("Logged in successfully!")
@@ -99,6 +86,7 @@ def login_screen():
 
 def is_admin_screen():
     with st.sidebar:
+        st.divider()
         st.write("Admin Panel")
         cursor.execute("SELECT username FROM users")
         admin_search_term = st.text_input("Search users:", placeholder="Type username...", key="admin_search")
