@@ -1,6 +1,8 @@
 import streamlit as st
 import sqlite3
 import json
+import os
+import random
 from datetime import datetime
 
 def MakeOrderForm(username="Guest"):
@@ -202,6 +204,7 @@ def MakeOrderForm(username="Guest"):
                 accent_color = st.text_input("Accent Color", key=f"accent_color_{item}")
 
             design = st.text_area("Cake Design Details", key=f"design_{item}", height=100)
+            uploaded_image = st.file_uploader("Upload Cake Image", key=f"image_{item}", type=['png', 'jpg', 'jpeg'])
 
             items_data.append({
                 "item_number": item,
@@ -213,7 +216,8 @@ def MakeOrderForm(username="Guest"):
                 "finish": finish,
                 "base_color": base_color,
                 "accent_color": accent_color,
-                "design_details": design
+                "design_details": design,
+                "uploaded_image": uploaded_image
             })
 
         elif item_type == "Tiered Cake":
@@ -229,6 +233,8 @@ def MakeOrderForm(username="Guest"):
                     tier_finish = st.selectbox("Finish", ["Buttercream", "Fondant"], key=f"tier_{item}_{t}_finish")
                     tier_base_color = st.text_input("Base Color", key=f"tier_{item}_{t}_base_color")
                     tier_accent_color = st.text_input("Accent Color", key=f"tier_{item}_{t}_accent_color")
+                    tier_image = st.file_uploader("Upload Tier Image", key=f"tier_{item}_{t}_image", type=['png', 'jpg', 'jpeg'])
+                    
                     tiers_info.append({
                         "tier": t,
                         "size": tier_size,
@@ -237,7 +243,8 @@ def MakeOrderForm(username="Guest"):
                         "filling": tier_filling,
                         "finish": tier_finish,
                         "base_color": tier_base_color,
-                        "accent_color": tier_accent_color
+                        "accent_color": tier_accent_color,
+                        "uploaded_image": tier_image
                     })
 
             design = st.text_area("Tiered Cake Design Details", key=f"design_{item}", height=140)
@@ -411,6 +418,27 @@ def MakeOrderForm(username="Guest"):
                 labels = [name.replace("_", " ").title() for name in missing]
                 st.error(f"Please complete required checklist items: {', '.join(labels)}")
             else:
+                os.makedirs("images", exist_ok=True)
+                
+                def process_image(img_obj):
+                    if img_obj is not None:
+                        file_id = f"{random.randint(10000, 99999)}"
+                        ext = os.path.splitext(img_obj.name)[1]
+                        filename = f"{file_id}{ext}"
+                        with open(os.path.join("images", filename), "wb") as f:
+                            f.write(img_obj.getbuffer())
+                        return filename
+                    return None
+
+                for i_data in items_data:
+                    if i_data["type"] == "Cake":
+                        img = i_data.pop("uploaded_image", None)
+                        i_data["image_file"] = process_image(img)
+                    elif i_data["type"] == "Tiered Cake":
+                        for t_info in i_data.get("tiers_info", []):
+                            img = t_info.pop("uploaded_image", None)
+                            t_info["image_file"] = process_image(img)
+
                 # Collect all order data into a dict
                 order_data = {
                     "order_type": st.session_state.order_type,
@@ -549,6 +577,6 @@ def ViewOrderForm():
                 st.json(order_data)
 
 if __name__ == "__main__":
-    OrderForm()
+    MakeOrderForm()
 
 
