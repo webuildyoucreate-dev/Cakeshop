@@ -545,35 +545,164 @@ def ViewOrderForm():
                 order_data = {"error": f"Invalid JSON: {e}", "raw": order_json_str}
                 
             order_type = order_data.get('order_type', 'Unknown Type')
-            client_name = order_data.get('client', {}).get('name', 'Unknown Client')
-            event_date = order_data.get('event_details', {}).get('date', 'Unknown Date')
+            client = order_data.get('client', {})
+            client_name = client.get('name', 'Unknown Client')
+            events = order_data.get('event_details', {})
+            event_date = events.get('date', 'Unknown Date')
             
             with st.expander(f"Order #{len(orders)-idx} | {client_name} | {order_type} | {event_date}"):
                 st.markdown(f"**Author:** {author} | **Created At:** {time_created}")
                 
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.subheader("Client Information")
-                    client = order_data.get('client', {})
-                    st.write(f"**Name:** {client.get('name', '')}")
-                    st.write(f"**Phone:** {client.get('phone', '')}")
-                    st.write(f"**Email:** {client.get('email', '')}")
+                # Render as a form utilizing existing layout
+                st.info(f"Order type: {order_type}")
+                is_wedding = order_type == "Wedding order"
+
+                left, right = st.columns(2)
+                with left:
+                    st.markdown("## CLIENT INFORMATION")
+                    st.text_input("Name", value=client.get('name', ''), disabled=True, key=f"v_name_{idx}")
+                    st.text_input("Phone", value=client.get('phone', ''), disabled=True, key=f"v_phone_{idx}")
+                    st.text_input("Email", value=client.get('email', ''), disabled=True, key=f"v_email_{idx}")
+
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.text_input("Event Date", value=events.get('date', ''), disabled=True, key=f"v_edate_{idx}")
+                    with c2:
+                        st.number_input("Amt of ppl", value=events.get('guest_count', 0), disabled=True, key=f"v_gcount_{idx}")
+
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.text_input("Delivery or Pick-up", value=events.get('pickup_delivery', ''), disabled=True, key=f"v_pickup_{idx}")
+                    with c2:
+                        st.text_input("Delivery Time", value=events.get('delivery_time', ''), disabled=True, key=f"v_dtime_{idx}")
+
+                    if is_wedding:
+                        st.text_input("Photographer", value=events.get('photographer', ''), disabled=True, key=f"v_photo_{idx}")
+                        st.text_input("Wedding Colors", value=events.get('wedding_colors', ''), disabled=True, key=f"v_colors_{idx}")
+
+                with right:
+                    st.markdown("## VENUE INFORMATION")
+                    venue = order_data.get('venue', {})
+                    is_pickup = events.get('pickup_delivery') == "Pick-up"
+
+                    if not is_pickup:
+                        st.text_input("Venue Name", value=venue.get('name', ''), disabled=True, key=f"v_vname_{idx}")
+                        st.text_input("Venue Address", value=venue.get('address', ''), disabled=True, key=f"v_vaddr_{idx}")
+                        st.text_input("Venue City", value=venue.get('city', ''), disabled=True, key=f"v_vcity_{idx}")
+                        st.text_input("Venue State", value=venue.get('state', ''), disabled=True, key=f"v_vstate_{idx}")
+                        st.text_input("Venue Zip", value=venue.get('zip', ''), disabled=True, key=f"v_vzip_{idx}")
+                        st.text_input("Contact Person's Name", value=venue.get('contact_name', ''), disabled=True, key=f"v_vcname_{idx}")
+                        st.text_input("Contact Person's Phone", value=venue.get('contact_phone', ''), disabled=True, key=f"v_vcphone_{idx}")
+
+                    st.text_input("Event Time", value=events.get('event_time', ''), disabled=True, key=f"v_etime_{idx}")
+                    if is_wedding:
+                        st.text_input("Ceremony Time", value=events.get('ceremony_time', ''), disabled=True, key=f"v_ctime_{idx}")
+                        st.text_input("Florist", value=events.get('florist', ''), disabled=True, key=f"v_florist_{idx}")
+                    st.text_input("Flowers Provided By Couple", value=events.get('flowers_provided', ''), disabled=True, key=f"v_fprov_{idx}")
+
+                st.divider()
+                st.markdown("## ITEMS")
+                for i_data in order_data.get('items', []):
+                    item_num = i_data.get('item_number', 0)
+                    itype = i_data.get('type', '')
+                    st.markdown(f"### Item {item_num}: {itype}")
                     
-                with col2:
-                    st.subheader("Event Details")
-                    events = order_data.get('event_details', {})
-                    st.write(f"**Date:** {events.get('date', '')}")
-                    st.write(f"**Guest Count:** {events.get('guest_count', 0)}")
-                    st.write(f"**Delivery/Pickup:** {events.get('pickup_delivery', '')}")
-                    
-                with col3:
-                    st.subheader("Pricing")
-                    pricing = order_data.get('pricing', {})
-                    st.write(f"**Grand Total:** ${pricing.get('grand_total', 0)}")
-                    st.write(f"**Balance Due:** ${pricing.get('balance_due', 0)}")
+                    if itype == "Cupcake":
+                        row = st.columns(3)
+                        with row[0]: st.number_input("Quantity", value=i_data.get('quantity', 0), disabled=True, key=f"v_i_qty_{idx}_{item_num}")
+                        with row[1]: st.text_input("Flavor", value=i_data.get('flavor', ''), disabled=True, key=f"v_i_flav_{idx}_{item_num}")
+                        with row[2]: st.text_input("Frosting", value=i_data.get('frosting', ''), disabled=True, key=f"v_i_frost_{idx}_{item_num}")
+                        st.text_area("Design Details", value=i_data.get('design_details', ''), disabled=True, key=f"v_i_des_{idx}_{item_num}")
+                        
+                    elif itype == "Other":
+                        row4 = st.columns(4)
+                        with row4[0]: st.text_input("Type of Item", value=i_data.get('other_type', ''), disabled=True, key=f"v_o_type_{idx}_{item_num}")
+                        with row4[1]: st.text_input("Item Details", value=i_data.get('details', ''), disabled=True, key=f"v_o_det_{idx}_{item_num}")
+                        with row4[2]: st.text_input("Flavor", value=i_data.get('flavor', ''), disabled=True, key=f"v_o_flav_{idx}_{item_num}")
+                        with row4[3]: st.number_input("Quantity", value=i_data.get('quantity', 0), disabled=True, key=f"v_o_qty_{idx}_{item_num}")
+                        
+                    elif itype == "Cake":
+                        row1 = st.columns(4)
+                        with row1[0]: st.text_input("Size", value=i_data.get('size', ''), disabled=True, key=f"v_c_sz_{idx}_{item_num}")
+                        with row1[1]: st.text_input("Shape", value=i_data.get('shape', ''), disabled=True, key=f"v_c_sh_{idx}_{item_num}")
+                        with row1[2]: st.text_input("Flavor", value=i_data.get('flavor', ''), disabled=True, key=f"v_c_fl_{idx}_{item_num}")
+                        with row1[3]: st.text_input("Filling", value=i_data.get('filling', ''), disabled=True, key=f"v_c_fil_{idx}_{item_num}")
+                        row2 = st.columns(3)
+                        with row2[0]: st.text_input("Finish", value=i_data.get('finish', ''), disabled=True, key=f"v_c_fin_{idx}_{item_num}")
+                        with row2[1]: st.text_input("Base Color", value=i_data.get('base_color', ''), disabled=True, key=f"v_c_bc_{idx}_{item_num}")
+                        with row2[2]: st.text_input("Accent Color", value=i_data.get('accent_color', ''), disabled=True, key=f"v_c_ac_{idx}_{item_num}")
+                        st.text_area("Cake Design Details", value=i_data.get('design_details', ''), disabled=True, key=f"v_c_des_{idx}_{item_num}")
+                        if i_data.get('image_file'):
+                            st.image(os.path.join("images", i_data['image_file']), caption="Uploaded Image")
+                            
+                    elif itype == "Tiered Cake":
+                        st.number_input("Number of Tiers", value=i_data.get('tiers', 0), disabled=True, key=f"v_tc_t_{idx}_{item_num}")
+                        for tier_data in i_data.get('tiers_info', []):
+                            t_num = tier_data.get('tier', 0)
+                            with st.expander(f"Tier {t_num} (View)"):
+                                st.text_input("Tier Size", value=tier_data.get('size', ''), disabled=True, key=f"v_tc_sz_{idx}_{item_num}_{t_num}")
+                                st.number_input("Tier Servings", value=tier_data.get('servings', 0), disabled=True, key=f"v_tc_srv_{idx}_{item_num}_{t_num}")
+                                st.text_input("Flavor", value=tier_data.get('flavor', ''), disabled=True, key=f"v_tc_fl_{idx}_{item_num}_{t_num}")
+                                st.text_input("Filling", value=tier_data.get('filling', ''), disabled=True, key=f"v_tc_fil_{idx}_{item_num}_{t_num}")
+                                st.text_input("Finish", value=tier_data.get('finish', ''), disabled=True, key=f"v_tc_fin_{idx}_{item_num}_{t_num}")
+                                st.text_input("Base Color", value=tier_data.get('base_color', ''), disabled=True, key=f"v_tc_bc_{idx}_{item_num}_{t_num}")
+                                st.text_input("Accent Color", value=tier_data.get('accent_color', ''), disabled=True, key=f"v_tc_ac_{idx}_{item_num}_{t_num}")
+                                if tier_data.get('image_file'):
+                                    st.image(os.path.join("images", tier_data['image_file']), caption=f"Uploaded Tier {t_num} Image")
+                        st.text_area("Tiered Cake Design Details", value=i_data.get('design_details', ''), disabled=True, key=f"v_tc_des_{idx}_{item_num}")
+                    st.markdown("---")
+
+                st.markdown("### Overall Order Design Notes")
+                st.text_area("Overall Design Details", value=order_data.get('overall_design_notes', ''), disabled=True, height=100, key=f"v_ov_des_{idx}")
                 
                 st.divider()
-                st.subheader("Raw Order Data")
+                st.markdown("## PRICING")
+                left, right = st.columns(2)
+                pricing = order_data.get('pricing', {})
+                with left:
+                    st.number_input("Cake Price ($)", value=pricing.get('cake_price', 0.0), disabled=True, key=f"v_pr_cp_{idx}")
+                    st.number_input("Delivery ($)", value=pricing.get('delivery_fee', 0.0), disabled=True, key=f"v_pr_del_{idx}")
+                    st.number_input("Grand Total ($)", value=pricing.get('grand_total', 0.0), disabled=True, key=f"v_pr_gt_{idx}")
+                with right:
+                    st.text_input("Equipment Rental", value=pricing.get('equipment_rental', ''), disabled=True, key=f"v_pr_eq_{idx}")
+                    st.number_input("Deposit Amount ($)", value=pricing.get('deposit_amount', 0.0), disabled=True, key=f"v_pr_dep_{idx}")
+                    st.number_input("Balance Due ($)", value=pricing.get('balance_due', 0.0), disabled=True, key=f"v_pr_bal_{idx}")
+                    st.text_input("Due Date(s)", value=pricing.get('due_dates', ''), disabled=True, key=f"v_pr_dd_{idx}")
+                    st.checkbox("Paid in Full", value=pricing.get('paid_in_full', False), disabled=True, key=f"v_pr_pif_{idx}")
+                
+                c1, c2 = st.columns(2)
+                with c1: st.text_input("Order Taken By", value=pricing.get('order_taken_by', ''), disabled=True, key=f"v_pr_otb_{idx}")
+                with c2: st.text_input("Date", value=pricing.get('order_date', ''), disabled=True, key=f"v_pr_od_{idx}")
+                
+                st.divider()
+                st.markdown("## FLOWERS / DECOR / STAND")
+                left, right = st.columns(2)
+                decor = order_data.get('decor', {})
+                with left:
+                    st.text_area("Flowers Here", value=decor.get('flowers_here', ''), disabled=True, key=f"v_dc_fl_{idx}")
+                    st.text_area("Other Décor Here", value=decor.get('other_decor', ''), disabled=True, key=f"v_dc_ot_{idx}")
+                with right:
+                    st.text_area("Cake Stand", value=decor.get('cake_stand', ''), disabled=True, height=200, key=f"v_dc_cs_{idx}")
+                
+                st.divider()
+                st.text_input("Circle Location", value=order_data.get('circle_location', ''), disabled=True, key=f"v_cloc_{idx}")
+
+                st.divider()
+                st.markdown("## Checklist")
+                cl = order_data.get('checklist', {})
+                st.checkbox("Items Needed From Client", value=cl.get('needed_client', False), disabled=True, key=f"v_cl_1_{idx}")
+                st.checkbox("Items To Be Ordered By Desserts By Dana", value=cl.get('ordered_dbd', False), disabled=True, key=f"v_cl_2_{idx}")
+                st.checkbox("Items Received (Date / Initials / Item)", value=cl.get('items_received', False), disabled=True, key=f"v_cl_3_{idx}")
+                st.checkbox("Equipment Rental Returned To DBD", value=cl.get('equipment_returned', False), disabled=True, key=f"v_cl_4_{idx}")
+                st.checkbox("Time Confirmed", value=cl.get('time_confirmed', False), disabled=True, key=f"v_cl_5_{idx}")
+                st.checkbox("Count Confirmed", value=cl.get('count_confirmed', False), disabled=True, key=f"v_cl_6_{idx}")
+                st.checkbox("Invoice", value=cl.get('invoice', False), disabled=True, key=f"v_cl_7_{idx}")
+                st.checkbox("Flower/Topper/Stand Reminder", value=cl.get('flower_reminder', False), disabled=True, key=f"v_cl_8_{idx}")
+                st.checkbox("Save Top Tier", value=cl.get('save_top_tier', False), disabled=True, key=f"v_cl_9_{idx}")
+                st.checkbox("Topper at Venue", value=cl.get('topper_venue', False), disabled=True, key=f"v_cl_10_{idx}")
+
+                st.divider()
+                st.subheader("Raw JSON Data")
                 st.json(order_data)
 
 if __name__ == "__main__":
