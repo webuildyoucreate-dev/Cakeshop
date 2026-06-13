@@ -7,11 +7,6 @@ from datetime import datetime
 
 def MakeOrderForm(username="Guest"):
 
-    st.set_page_config(
-        page_title="Desserts By Dana - Cake Order Form",
-        layout="wide"
-    )
-
     if "order_type" not in st.session_state:
         st.session_state.order_type = None
 
@@ -29,8 +24,6 @@ def MakeOrderForm(username="Guest"):
         st.info(f"Current order type: {st.session_state.order_type}")
 
     is_wedding_order = st.session_state.order_type == "Wedding order"
-
-    st.title("DESSERTS BY DANA")
 
 
 

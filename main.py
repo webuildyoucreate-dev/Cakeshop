@@ -1,9 +1,20 @@
 import streamlit as st
 import sqlite3
 from cryptography.fernet import Fernet
+from streamlit_option_menu import option_menu
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
+from components.ToggleSidebar import ToggleSidebar
+
+if "sidebar_state" not in st.session_state:
+    st.session_state.sidebar_state = "collapsed" 
+
+
+st.set_page_config(
+        page_title="Desserts By Dana - Cake Order Form",
+        layout="wide"
+    )
 
 try:
     with open("secret.key", "rb") as key_file:
@@ -17,10 +28,6 @@ conn = sqlite3.connect("app.db")
 cursor = conn.cursor()
 
 def handle_screens():
-    st.set_page_config(
-        page_title="Desserts By Dana - Cake Order Form",
-        layout="wide"
-    )
 
     with st.sidebar:
         st.title(f"Logged in as: {st.session_state.username}")
@@ -44,13 +51,9 @@ def handle_screens():
         is_admin = (admin_flag == 1 or st.session_state.username == "admin")
 
     if is_admin:
-        st.warning("Admin and manager features are to the left in the sidebar.")
         is_admin_screen()
     elif user_manager:
-        st.warning("Manager features are to the left in the sidebar.")
         is_manager_screen(user_manager)
-
-    st.title("DESSERTS BY DANA")
 
     if st.session_state.screen == "order_form":
         MakeOrderForm(st.session_state.username)
