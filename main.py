@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 from cryptography.fernet import Fernet
 from streamlit_option_menu import option_menu
+import os
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
@@ -20,7 +21,7 @@ try:
     with open("secret.key", "rb") as key_file:
         secret_key = key_file.read()
 except Exception as e:
-    st.error(f"Error loading encryption key: {e}")
+    secre_key = os.getenv("SECRET_KEY", "fallback_value_for_local_dev")
     st.stop()
 
 cipher_suite = Fernet(secret_key)
