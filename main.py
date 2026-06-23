@@ -1,27 +1,42 @@
 import streamlit as st
 import sqlite3
 from cryptography.fernet import Fernet
+from streamlit_option_menu import option_menu
+import os
+import shutil
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
-from components.RequisitionForm import RequisitionForm
 
 try:
     with open("secret.key", "rb") as key_file:
         secret_key = key_file.read()
 except Exception as e:
-    st.error(f"Error loading encryption key: {e}")
-    st.stop()
+    secret_key = os.getenv("SECRET_KEY", "fallback_value_for_local_dev")
 
 cipher_suite = Fernet(secret_key)
-conn = sqlite3.connect("app.db")
+
+DB_DIR = "/app/data"
+VOLUME_DB_PATH = f"{DB_DIR}/my_database.db"
+SEED_DB_PATH = "app.db" # The populated DB you pushed to GitHub
+
+# Check if we are running on Railway (the /app/data volume exists)
+if os.path.exists(DB_DIR):
+    # If the database isn't in the volume yet, this is the first run! 
+    # Copy the seed database into the safe, persistent volume.
+    if not os.path.exists(VOLUME_DB_PATH):
+        shutil.copy(SEED_DB_PATH, VOLUME_DB_PATH)
+    
+    # Connect to the persistent database
+    conn = sqlite3.connect(VOLUME_DB_PATH)
+
+else:
+    # We are running locally on your computer. Just use the seed DB.
+    conn = sqlite3.connect(SEED_DB_PATH)
+
 cursor = conn.cursor()
 
 def handle_screens():
-    st.set_page_config(
-        page_title="Desserts By Dana - Cake Order Form",
-        layout="wide"
-    )
 
     with st.sidebar:
         st.title(f"Logged in as: {st.session_state.username}")
@@ -47,13 +62,9 @@ def handle_screens():
         is_admin = (admin_flag == 1 or st.session_state.username == "admin")
 
     if is_admin:
-        st.warning("Admin and manager features are to the left in the sidebar.")
         is_admin_screen()
     elif user_manager:
-        st.warning("Manager features are to the left in the sidebar.")
         is_manager_screen(user_manager)
-
-    st.title("DESSERTS BY DANA")
 
     if st.session_state.screen == "order_form":
         MakeOrderForm(st.session_state.username)
