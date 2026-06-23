@@ -44,6 +44,8 @@ else:
     # We are running locally on your computer. Just use the seed DB.
     conn = sqlite3.connect(SEED_DB_PATH)
 
+cursor = conn.cursor()
+
 def handle_screens():
 
     with st.sidebar:
