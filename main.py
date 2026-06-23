@@ -7,16 +7,6 @@ import shutil
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
-from components.ToggleSidebar import ToggleSidebar
-
-if "sidebar_state" not in st.session_state:
-    st.session_state.sidebar_state = "collapsed" 
-
-
-st.set_page_config(
-        page_title="Desserts By Dana - Cake Order Form",
-        layout="wide"
-    )
 
 try:
     with open("secret.key", "rb") as key_file:
@@ -54,10 +44,12 @@ def handle_screens():
         with sc1:
             st.button("Logout", on_click=lambda: st.session_state.update(authenticated=False))
         with sc2:
-            if st.session_state.screen == "order_form":
+            if st.session_state.screen == "order_form" or st.session_state.screen == "requisition_form":
                 st.button("View Orders", on_click=lambda: st.session_state.update(screen="view_orders"))
             elif st.session_state.screen == "view_orders":
                 st.button("Create Order", on_click=lambda: st.session_state.update(screen="order_form"))
+
+        st.button("Requisition Form", use_container_width=True, on_click=lambda: st.session_state.update(screen="requisition_form"))
 
     # Fetch roles for the logged in user
     cursor.execute("SELECT store, manager, admin FROM users WHERE username = ?", (st.session_state.username,))
@@ -78,6 +70,8 @@ def handle_screens():
         MakeOrderForm(st.session_state.username)
     elif st.session_state.screen == "view_orders":
         ViewOrderForm()
+    elif st.session_state.screen == "requisition_form":
+        RequisitionForm()
     else:
         st.error("Unknown screen. Please select a valid option from the sidebar.")
 
