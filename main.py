@@ -7,6 +7,7 @@ import shutil
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
+from components.RequisitionForm import RequisitionForm
 
 try:
     with open("secret.key", "rb") as key_file:

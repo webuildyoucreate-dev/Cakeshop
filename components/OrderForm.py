@@ -550,22 +550,267 @@ def ViewOrderForm():
 
     orders = load_orders()
 
+    def check_search_match(order_data, author, query):
+        if not query:
+            return True
+        
+        query = query.lower()
+        
+        # Author
+        if query in (author or "").lower():
+            return True
+            
+        # Client info
+        client = order_data.get('client', {})
+        if query in client.get('name', '').lower() or \
+           query in client.get('phone', '').lower() or \
+           query in client.get('email', '').lower():
+            return True
+            
+        # Venue info
+        venue = order_data.get('venue', {})
+        if query in venue.get('name', '').lower() or \
+           query in venue.get('address', '').lower() or \
+           query in venue.get('city', '').lower() or \
+           query in venue.get('state', '').lower() or \
+           query in venue.get('zip', '').lower() or \
+           query in venue.get('contact_name', '').lower() or \
+           query in venue.get('contact_phone', '').lower():
+            return True
+            
+        # Event details
+        events = order_data.get('event_details', {})
+        if query in events.get('pickup_delivery', '').lower() or \
+           query in events.get('photographer', '').lower() or \
+           query in events.get('wedding_colors', '').lower() or \
+           query in events.get('florist', '').lower() or \
+           query in events.get('flowers_provided', '').lower():
+            return True
+            
+        # Overall notes
+        if query in order_data.get('overall_design_notes', '').lower():
+            return True
+            
+        # Decor
+        decor = order_data.get('decor', {})
+        if query in decor.get('flowers_here', '').lower() or \
+           query in decor.get('other_decor', '').lower() or \
+           query in decor.get('cake_stand', '').lower():
+            return True
+            
+        # Circle location
+        if query in order_data.get('circle_location', '').lower():
+            return True
+            
+        # Items
+        items = order_data.get('items', [])
+        for item in items:
+            if query in item.get('type', '').lower() or \
+               query in item.get('flavor', '').lower() or \
+               query in item.get('details', '').lower() or \
+               query in item.get('other_type', '').lower() or \
+               query in item.get('size', '').lower() or \
+               query in item.get('shape', '').lower() or \
+               query in item.get('finish', '').lower() or \
+               query in item.get('base_color', '').lower() or \
+               query in item.get('accent_color', '').lower() or \
+               query in item.get('design_details', '').lower():
+                return True
+                
+            for tier in item.get('tiers_info', []):
+                if query in tier.get('size', '').lower() or \
+                   query in tier.get('flavor', '').lower() or \
+                   query in tier.get('filling', '').lower() or \
+                   query in tier.get('finish', '').lower() or \
+                   query in tier.get('base_color', '').lower() or \
+                   query in tier.get('accent_color', '').lower():
+                    return True
+                    
+        # Pricing info
+        pricing = order_data.get('pricing', {})
+        if query in pricing.get('order_taken_by', '').lower() or \
+           query in pricing.get('due_dates', '').lower():
+            return True
+            
+        return False
+
     if not orders:
         st.info("No orders found in the database.")
     else:
-        for idx, (author, time_created, order_json_str) in enumerate(orders):
+        # Search & Filter Layout
+        st.subheader("🔍 Search and Filter Orders")
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            search_query = st.text_input(
+                "Search", 
+                placeholder="Search by client, phone, email, author, flavors, notes...", 
+                label_visibility="collapsed",
+                key="order_viewer_search_input"
+            )
+        with col2:
+            st.markdown(f"<div style='text-align: right; color: gray; padding-top: 5px; font-weight: bold;'>Total: {len(orders)} orders</div>", unsafe_allow_html=True)
+            
+        with st.expander("Filter & Sort Options", expanded=False):
+            f_col1, f_col2, f_col3 = st.columns(3)
+            with f_col1:
+                unique_authors = sorted(list(set(author for author, _, _ in orders if author)))
+                author_options = ["All"] + unique_authors
+                
+                # Check for employee filtering selected from manager panel
+                default_author_idx = 0
+                if "view_orders_employee" in st.session_state and st.session_state.view_orders_employee in unique_authors:
+                    default_author_idx = author_options.index(st.session_state.view_orders_employee)
+                    
+                selected_author = st.selectbox("Created By (Author)", author_options, index=default_author_idx, key="order_viewer_author_select")
+                
+                if selected_author == "All":
+                    st.session_state.pop("view_orders_employee", None)
+                else:
+                    st.session_state.view_orders_employee = selected_author
+                    
+            with f_col2:
+                selected_order_type = st.selectbox("Order Type", ["All", "Wedding order", "Non-wedding order"], key="order_viewer_type_select")
+            with f_col3:
+                selected_payment_status = st.selectbox("Payment Status", ["All", "Paid in Full", "Balance Due"], key="order_viewer_payment_select")
+                
+            date_col1, date_col2 = st.columns([1, 2])
+            with date_col1:
+                date_filter_type = st.selectbox("Date Filter Type", ["No Date Filter", "Event Date", "Date Created"], key="order_viewer_date_filter_type")
+            with date_col2:
+                if date_filter_type != "No Date Filter":
+                    date_range = st.date_input("Select Date Range (Start & End)", value=[], key="order_viewer_date_range")
+                else:
+                    date_range = []
+                    
+            sort_col1, sort_col2 = st.columns([2, 1])
+            with sort_col1:
+                sort_option = st.selectbox(
+                    "Sort By", 
+                    [
+                        "Date Created (Newest First)", 
+                        "Date Created (Oldest First)", 
+                        "Event Date (Soonest First)", 
+                        "Event Date (Latest First)"
+                    ],
+                    key="order_viewer_sort_select"
+                )
+            with sort_col2:
+                st.write("")
+                st.write("")
+                if st.button("Reset Filters", use_container_width=True, key="order_viewer_reset_btn"):
+                    st.session_state.pop("view_orders_employee", None)
+                    st.rerun()
+
+        # Apply Filters & Search
+        filtered_orders = []
+        for idx_orig, (author, time_created, order_json_str) in enumerate(orders):
             try:
                 order_data = json.loads(order_json_str)
             except Exception as e:
                 order_data = {"error": f"Invalid JSON: {e}", "raw": order_json_str}
                 
+            order_num = len(orders) - idx_orig
+            
+            # Apply text search
+            if search_query and not check_search_match(order_data, author, search_query):
+                continue
+                
+            # Apply author filter
+            if selected_author != "All" and author != selected_author:
+                continue
+                
+            # Apply order type filter
+            order_type = order_data.get('order_type', 'Unknown Type')
+            if selected_order_type != "All" and order_type != selected_order_type:
+                continue
+                
+            # Apply payment status filter
+            pricing = order_data.get('pricing', {})
+            paid_in_full = pricing.get('paid_in_full', False)
+            if selected_payment_status == "Paid in Full" and not paid_in_full:
+                continue
+            if selected_payment_status == "Balance Due" and paid_in_full:
+                continue
+                
+            # Apply date range filter
+            if date_filter_type != "No Date Filter" and date_range:
+                if isinstance(date_range, (list, tuple)) and len(date_range) > 0:
+                    if len(date_range) == 2:
+                        start_date, end_date = date_range[0], date_range[1]
+                    else:
+                        start_date = date_range[0]
+                        end_date = date_range[0]
+                        
+                    date_to_compare = None
+                    if date_filter_type == "Event Date":
+                        date_str = order_data.get('event_details', {}).get('date', '')
+                        try:
+                            date_to_compare = datetime.strptime(date_str, "%Y-%m-%d").date()
+                        except:
+                            pass
+                    elif date_filter_type == "Date Created":
+                        if time_created:
+                            try:
+                                date_str = time_created.split('T')[0]
+                                date_to_compare = datetime.strptime(date_str, "%Y-%m-%d").date()
+                            except:
+                                pass
+                                
+                    if date_to_compare:
+                        if not (start_date <= date_to_compare <= end_date):
+                            continue
+                    else:
+                        continue
+                        
+            filtered_orders.append({
+                "order_num": order_num,
+                "author": author,
+                "time_created": time_created,
+                "order_data": order_data
+            })
+            
+        # Apply sorting
+        if sort_option == "Date Created (Newest First)":
+            filtered_orders.sort(key=lambda x: x["time_created"] or "", reverse=True)
+        elif sort_option == "Date Created (Oldest First)":
+            filtered_orders.sort(key=lambda x: x["time_created"] or "", reverse=False)
+        elif sort_option == "Event Date (Soonest First)":
+            def get_event_date(x):
+                d_str = x["order_data"].get('event_details', {}).get('date', '')
+                try:
+                    return datetime.strptime(d_str, "%Y-%m-%d").date()
+                except:
+                    return datetime.max.date()
+            filtered_orders.sort(key=get_event_date, reverse=False)
+        elif sort_option == "Event Date (Latest First)":
+            def get_event_date_desc(x):
+                d_str = x["order_data"].get('event_details', {}).get('date', '')
+                try:
+                    return datetime.strptime(d_str, "%Y-%m-%d").date()
+                except:
+                    return datetime.min.date()
+            filtered_orders.sort(key=get_event_date_desc, reverse=True)
+
+        if not filtered_orders:
+            st.info("No orders found matching your search and filter criteria.")
+            return
+
+        st.success(f"Showing {len(filtered_orders)} of {len(orders)} orders")
+        for order_info in filtered_orders:
+            order_num = order_info["order_num"]
+            author = order_info["author"]
+            time_created = order_info["time_created"]
+            order_data = order_info["order_data"]
+            idx = order_num
+            
             order_type = order_data.get('order_type', 'Unknown Type')
             client = order_data.get('client', {})
             client_name = client.get('name', 'Unknown Client')
             events = order_data.get('event_details', {})
             event_date = events.get('date', 'Unknown Date')
             
-            with st.expander(f"Order #{len(orders)-idx} | {client_name} | {order_type} | {event_date}"):
+            with st.expander(f"Order #{order_num} | {client_name} | {order_type} | {event_date}"):
                 st.markdown(f"**Author:** {author} | **Created At:** {time_created}")
                 
                 # Render as a form utilizing existing layout
