@@ -21,7 +21,7 @@ try:
     with open("secret.key", "rb") as key_file:
         secret_key = key_file.read()
 except Exception as e:
-    secre_key = os.getenv("SECRET_KEY", "fallback_value_for_local_dev")
+    secret_key = os.getenv("SECRET_KEY", "fallback_value_for_local_dev")
 
 cipher_suite = Fernet(secret_key)
 conn = sqlite3.connect("app.db")
