@@ -2,8 +2,27 @@ import streamlit as st
 import sqlite3
 import json
 import os
+import shutil
 import random
 from datetime import datetime
+
+# --- Volume / Local Path Detection ---
+DB_DIR = "/app/data"
+VOLUME_DB_PATH = f"{DB_DIR}/my_database.db"
+SEED_DB_PATH = "app.db"
+VOLUME_IMAGES_DIR = f"{DB_DIR}/images"
+SEED_IMAGES_DIR = "images"
+
+if os.path.exists(DB_DIR):
+    if not os.path.exists(VOLUME_DB_PATH):
+        shutil.copy(SEED_DB_PATH, VOLUME_DB_PATH)
+    if not os.path.exists(VOLUME_IMAGES_DIR):
+        shutil.copytree(SEED_IMAGES_DIR, VOLUME_IMAGES_DIR)
+    db_path = VOLUME_DB_PATH
+    active_image_folder = VOLUME_IMAGES_DIR
+else:
+    db_path = SEED_DB_PATH
+    active_image_folder = SEED_IMAGES_DIR
 
 def MakeOrderForm(username="Guest"):
 
@@ -411,14 +430,14 @@ def MakeOrderForm(username="Guest"):
                 labels = [name.replace("_", " ").title() for name in missing]
                 st.error(f"Please complete required checklist items: {', '.join(labels)}")
             else:
-                os.makedirs("images", exist_ok=True)
+                os.makedirs(active_image_folder, exist_ok=True)
                 
                 def process_image(img_obj):
                     if img_obj is not None:
                         file_id = f"{random.randint(10000, 99999)}"
                         ext = os.path.splitext(img_obj.name)[1]
                         filename = f"{file_id}{ext}"
-                        with open(os.path.join("images", filename), "wb") as f:
+                        with open(os.path.join(active_image_folder, filename), "wb") as f:
                             f.write(img_obj.getbuffer())
                         return filename
                     return None
@@ -496,7 +515,7 @@ def MakeOrderForm(username="Guest"):
                 }
                 
                 try:
-                    conn = sqlite3.connect("app.db")
+                    conn = sqlite3.connect(db_path)
                     cursor = conn.cursor()
                     cursor.execute(
                         "INSERT INTO orders (author, `time created`, json) VALUES (?, ?, ?)",
@@ -516,7 +535,7 @@ def ViewOrderForm():
 
     def load_orders():
         try:
-            conn = sqlite3.connect("app.db")
+            conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             cursor.execute("SELECT author, `time created`, json FROM orders ORDER BY `time created` DESC")
             rows = cursor.fetchall()
@@ -626,7 +645,7 @@ def ViewOrderForm():
                         with row2[2]: st.text_input("Accent Color", value=i_data.get('accent_color', ''), disabled=True, key=f"v_c_ac_{idx}_{item_num}")
                         st.text_area("Cake Design Details", value=i_data.get('design_details', ''), disabled=True, key=f"v_c_des_{idx}_{item_num}")
                         if i_data.get('image_file'):
-                            st.image(os.path.join("images", i_data['image_file']), caption="Uploaded Image")
+                            st.image(os.path.join(active_image_folder, i_data['image_file']), caption="Uploaded Image")
                             
                     elif itype == "Tiered Cake":
                         st.number_input("Number of Tiers", value=i_data.get('tiers', 0), disabled=True, key=f"v_tc_t_{idx}_{item_num}")
@@ -641,7 +660,7 @@ def ViewOrderForm():
                                 st.text_input("Base Color", value=tier_data.get('base_color', ''), disabled=True, key=f"v_tc_bc_{idx}_{item_num}_{t_num}")
                                 st.text_input("Accent Color", value=tier_data.get('accent_color', ''), disabled=True, key=f"v_tc_ac_{idx}_{item_num}_{t_num}")
                                 if tier_data.get('image_file'):
-                                    st.image(os.path.join("images", tier_data['image_file']), caption=f"Uploaded Tier {t_num} Image")
+                                    st.image(os.path.join(active_image_folder, tier_data['image_file']), caption=f"Uploaded Tier {t_num} Image")
                         st.text_area("Tiered Cake Design Details", value=i_data.get('design_details', ''), disabled=True, key=f"v_tc_des_{idx}_{item_num}")
                     st.markdown("---")
 
