@@ -3,6 +3,7 @@ import sqlite3
 from cryptography.fernet import Fernet
 from streamlit_option_menu import option_menu
 import os
+import shutil
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
@@ -24,8 +25,24 @@ except Exception as e:
     secret_key = os.getenv("SECRET_KEY", "fallback_value_for_local_dev")
 
 cipher_suite = Fernet(secret_key)
-conn = sqlite3.connect("app.db")
-cursor = conn.cursor()
+
+DB_DIR = "/app/data"
+VOLUME_DB_PATH = f"{DB_DIR}/my_database.db"
+SEED_DB_PATH = "app.db" # The populated DB you pushed to GitHub
+
+# Check if we are running on Railway (the /app/data volume exists)
+if os.path.exists(DB_DIR):
+    # If the database isn't in the volume yet, this is the first run! 
+    # Copy the seed database into the safe, persistent volume.
+    if not os.path.exists(VOLUME_DB_PATH):
+        shutil.copy(SEED_DB_PATH, VOLUME_DB_PATH)
+    
+    # Connect to the persistent database
+    conn = sqlite3.connect(VOLUME_DB_PATH)
+
+else:
+    # We are running locally on your computer. Just use the seed DB.
+    conn = sqlite3.connect(SEED_DB_PATH)
 
 def handle_screens():
 
