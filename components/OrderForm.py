@@ -17,7 +17,10 @@ if os.path.exists(DB_DIR):
     if not os.path.exists(VOLUME_DB_PATH):
         shutil.copy(SEED_DB_PATH, VOLUME_DB_PATH)
     if not os.path.exists(VOLUME_IMAGES_DIR):
-        shutil.copytree(SEED_IMAGES_DIR, VOLUME_IMAGES_DIR)
+        if os.path.exists(SEED_IMAGES_DIR):
+            shutil.copytree(SEED_IMAGES_DIR, VOLUME_IMAGES_DIR)
+        else:
+            os.makedirs(VOLUME_IMAGES_DIR)
     db_path = VOLUME_DB_PATH
     active_image_folder = VOLUME_IMAGES_DIR
 else:
