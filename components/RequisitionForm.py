@@ -161,96 +161,90 @@ def RequisitionForm(username=None):
     if "req_form_id" not in st.session_state:
         st.session_state.req_form_id = 0
 
-    tab_new, tab_past = st.tabs(["New Requisition", "Past Requisitions"])
+    st.markdown("### Create New Requisition")
+    st.write("Enter the quantity needed for each item below, then click **Save Requisition** at the bottom.")
 
-    with tab_new:
-        st.markdown("### Create New Requisition")
-        st.write("Enter the quantity needed for each item below, then click **Save Requisition** at the bottom.")
+    # From / To location
+    loc_col1, loc_col2 = st.columns(2)
+    with loc_col1:
+        from_location = st.text_input("From Location", placeholder="e.g. Main Kitchen", key=f"req_from_loc_{st.session_state.req_form_id}")
+    with loc_col2:
+        to_location = st.text_input("To Location", placeholder="e.g. Store F", key=f"req_to_loc_{st.session_state.req_form_id}")
 
-        # From / To location
-        loc_col1, loc_col2 = st.columns(2)
-        with loc_col1:
-            from_location = st.text_input("From Location", placeholder="e.g. Main Kitchen", key=f"req_from_loc_{st.session_state.req_form_id}")
-        with loc_col2:
-            to_location = st.text_input("To Location", placeholder="e.g. Store F", key=f"req_to_loc_{st.session_state.req_form_id}")
+    st.divider()
 
-        st.divider()
+    # Requisition Categories distribution in 3 columns
+    col1_categories = ["Fillings", "Miscellaneous", "Toppings"]
+    col2_categories = ["Cupcakes", "Cake towers", "Bundts", "Other"]
+    col3_categories = ["Tarts", "Case cakes (6 in)", "Pies", "Brownies and bars", "Parfaits"]
 
-        # Requisition Categories distribution in 3 columns
-        col1_categories = ["Fillings", "Miscellaneous", "Toppings"]
-        col2_categories = ["Cupcakes", "Cake towers", "Bundts", "Other"]
-        col3_categories = ["Tarts", "Case cakes (6 in)", "Pies", "Brownies and bars", "Parfaits"]
+    c1, c2, c3 = st.columns(3)
 
-        c1, c2, c3 = st.columns(3)
+    form_id = st.session_state.req_form_id
 
-        form_id = st.session_state.req_form_id
+    def render_categories(categories, column):
+        with column:
+            for category in categories:
+                with st.container(border=True):
+                    st.markdown(f"#### {category}")
+                    for item in CATEGORIES[category]:
+                        cols_item = st.columns([3, 1.5])
+                        with cols_item[0]:
+                            # Clean vertical layout alignment
+                            st.markdown(f"<div style='padding-top: 6px;'>{item}</div>", unsafe_allow_html=True)
+                        with cols_item[1]:
+                            st.number_input(
+                                label=item,
+                                min_value=0,
+                                step=1,
+                                value=0,
+                                key=f"req_{category}_{item}_{form_id}",
+                                label_visibility="collapsed"
+                            )
 
-        def render_categories(categories, column):
-            with column:
-                for category in categories:
-                    with st.container(border=True):
-                        st.markdown(f"#### {category}")
-                        for item in CATEGORIES[category]:
-                            cols_item = st.columns([3, 1.5])
-                            with cols_item[0]:
-                                # Clean vertical layout alignment
-                                st.markdown(f"<div style='padding-top: 6px;'>{item}</div>", unsafe_allow_html=True)
-                            with cols_item[1]:
-                                st.number_input(
-                                    label=item,
-                                    min_value=0,
-                                    step=1,
-                                    value=0,
-                                    key=f"req_{category}_{item}_{form_id}",
-                                    label_visibility="collapsed"
-                                )
+    render_categories(col1_categories, c1)
+    render_categories(col2_categories, c2)
+    render_categories(col3_categories, c3)
 
-        render_categories(col1_categories, c1)
-        render_categories(col2_categories, c2)
-        render_categories(col3_categories, c3)
+    st.divider()
 
-        st.divider()
-
-        if st.button("Save Requisition", type="primary", use_container_width=True):
-            # Gather non-zero requisition items
-            requisition_data = {
-                "_meta": {
-                    "from_location": from_location,
-                    "to_location": to_location,
-                }
+    if st.button("Save Requisition", type="primary", use_container_width=True):
+        # Gather non-zero requisition items
+        requisition_data = {
+            "_meta": {
+                "from_location": from_location,
+                "to_location": to_location,
             }
-            for category, items in CATEGORIES.items():
-                category_data = {}
-                for item in items:
-                    qty = st.session_state.get(f"req_{category}_{item}_{form_id}", 0)
-                    if qty > 0:
-                        category_data[item] = qty
-                if category_data:
-                    requisition_data[category] = category_data
+        }
+        for category, items in CATEGORIES.items():
+            category_data = {}
+            for item in items:
+                qty = st.session_state.get(f"req_{category}_{item}_{form_id}", 0)
+                if qty > 0:
+                    category_data[item] = qty
+            if category_data:
+                requisition_data[category] = category_data
 
-            has_items = any(k != "_meta" for k in requisition_data)
-            if not has_items:
-                st.warning("Please specify a quantity greater than 0 for at least one item before saving.")
-            else:
-                try:
-                    conn = sqlite3.connect("app.db")
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "INSERT INTO requisitions (author, `time created`, json) VALUES (?, ?, ?)",
-                        (username, datetime.now().isoformat(), json.dumps(requisition_data))
-                    )
-                    conn.commit()
-                    conn.close()
+        has_items = any(k != "_meta" for k in requisition_data)
+        if not has_items:
+            st.warning("Please specify a quantity greater than 0 for at least one item before saving.")
+        else:
+            try:
+                conn = sqlite3.connect("app.db")
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO requisitions (author, `time created`, json) VALUES (?, ?, ?)",
+                    (username, datetime.now().isoformat(), json.dumps(requisition_data))
+                )
+                conn.commit()
+                conn.close()
 
-                    # Increment form version to reset inputs on rerun
-                    st.session_state.req_form_id += 1
-                    st.session_state.requisition_saved = True
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error saving requisition to database: {e}")
-
-    with tab_past:
-        ViewRequisitionForm()
+                # Increment form version to reset inputs on rerun
+                st.session_state.req_form_id += 1
+                st.session_state.requisition_saved = True
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error saving requisition to database: {e}")
 
 
 def ViewRequisitionForm():
