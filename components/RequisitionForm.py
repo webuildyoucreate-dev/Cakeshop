@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import json
 from datetime import datetime
+from components.pdf_export import generate_requisition_pdf
 
 CATEGORIES = {
     "Fillings": [
@@ -394,6 +395,21 @@ def ViewRequisitionForm():
             formatted_time = time_created
 
         with st.expander(f"Requisition #{req_id} | Saved by {author} | {formatted_time}"):
+            # ── PDF Download ───────────────────────────────────────────
+            try:
+                pdf_bytes = generate_requisition_pdf(data, req_id, author, time_created)
+                st.download_button(
+                    label="⬇️ Download as PDF",
+                    data=pdf_bytes,
+                    file_name=f"requisition_{req_id}_{author.replace(' ', '_')}.pdf",
+                    mime="application/pdf",
+                    key=f"pdf_req_{req_id}",
+                    use_container_width=True,
+                )
+            except Exception as pdf_err:
+                st.warning(f"Could not generate PDF: {pdf_err}")
+
+            st.divider()
             meta = data.get("_meta", {})
             from_loc = meta.get("from_location", "")
             to_loc = meta.get("to_location", "")

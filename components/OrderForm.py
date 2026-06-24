@@ -5,6 +5,7 @@ import os
 import shutil
 import random
 from datetime import datetime
+from components.pdf_export import generate_order_pdf
 
 # --- Volume / Local Path Detection ---
 DB_DIR = "/app/data"
@@ -811,8 +812,22 @@ def ViewOrderForm():
             
             with st.expander(f"Order #{order_num} | {client_name} | {order_type} | {event_date}"):
                 st.markdown(f"**Author:** {author} | **Created At:** {time_created}")
-                
-                # Render as a form utilizing existing layout
+
+                # ── PDF Download ───────────────────────────────────────────
+                try:
+                    pdf_bytes = generate_order_pdf(order_data, order_num, author, time_created)
+                    st.download_button(
+                        label="⬇️ Download as PDF",
+                        data=pdf_bytes,
+                        file_name=f"order_{order_num}_{client_name.replace(' ', '_')}.pdf",
+                        mime="application/pdf",
+                        key=f"pdf_order_{order_num}",
+                        use_container_width=True,
+                    )
+                except Exception as pdf_err:
+                    st.warning(f"Could not generate PDF: {pdf_err}")
+
+                st.divider()
                 st.info(f"Order type: {order_type}")
                 is_wedding = order_type == "Wedding order"
 
