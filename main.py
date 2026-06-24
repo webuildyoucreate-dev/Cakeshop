@@ -1,7 +1,6 @@
 import streamlit as st
 import sqlite3
 from cryptography.fernet import Fernet
-from streamlit_option_menu import option_menu
 import os
 import shutil
 
