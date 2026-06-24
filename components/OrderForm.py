@@ -534,7 +534,6 @@ def MakeOrderForm(username="Guest"):
     st.write(username)
 
 def ViewOrderForm():
-    st.title("Desserts By Dana - Order Viewer")
 
     def load_orders():
         try:

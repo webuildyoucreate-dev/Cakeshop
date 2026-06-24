@@ -7,7 +7,7 @@ import shutil
 
 from components.OrderForm import MakeOrderForm, ViewOrderForm
 from components.Login import Login
-from components.RequisitionForm import RequisitionForm
+from components.RequisitionForm import RequisitionForm, ViewRequisitionForm
 
 try:
     with open("secret.key", "rb") as key_file:
@@ -45,10 +45,11 @@ def handle_screens():
         with sc1:
             st.button("Logout", on_click=lambda: st.session_state.update(authenticated=False))
         with sc2:
-            if st.session_state.screen == "order_form" or st.session_state.screen == "requisition_form":
-                st.button("View Orders", on_click=lambda: st.session_state.update(screen="view_orders"))
-            elif st.session_state.screen == "view_orders":
-                st.button("Create Order", on_click=lambda: st.session_state.update(screen="order_form"))
+            if st.session_state.screen in ("order_form", "requisition_form", "view_history"):
+                if st.session_state.screen != "view_history":
+                    st.button("View History", on_click=lambda: st.session_state.update(screen="view_history"))
+                else:
+                    st.button("Create Order", on_click=lambda: st.session_state.update(screen="order_form"))
 
         st.button("Requisition Form", use_container_width=True, on_click=lambda: st.session_state.update(screen="requisition_form"))
 
@@ -69,8 +70,13 @@ def handle_screens():
 
     if st.session_state.screen == "order_form":
         MakeOrderForm(st.session_state.username)
-    elif st.session_state.screen == "view_orders":
-        ViewOrderForm()
+    elif st.session_state.screen == "view_history":
+        st.title("Desserts By Dana - History")
+        tab_orders, tab_requisitions = st.tabs(["📋 Past Orders", "📝 Past Requisitions"])
+        with tab_orders:
+            ViewOrderForm()
+        with tab_requisitions:
+            ViewRequisitionForm()
     elif st.session_state.screen == "requisition_form":
         RequisitionForm()
     else:
@@ -80,6 +86,7 @@ def login_screen():
     
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
+            
     
     if not st.session_state.authenticated:
         username = st.text_input("Username")
@@ -260,7 +267,7 @@ def is_manager_screen(manager_stores):
                         st.write(f"Stores: {store_display}")
                     with c3:
                         if st.button("View Orders", key=f"view_orders_{username}"):
-                            st.session_state.screen = "view_orders"
+                            st.session_state.screen = "view_history"
                             st.session_state.view_orders_employee = username
                             st.rerun()
 
