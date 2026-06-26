@@ -388,10 +388,12 @@ def MakeOrderForm(username="Guest"):
 
     st.markdown("## Circle Location")
 
-    circle_location = st.radio(
-        "",
-        ["F", "M", "B"],
-        horizontal=True
+    LOCATIONS = ["Farmers Market", "Main Store", "Booth Corner"]
+    circle_location = st.selectbox(
+        "Select Location",
+        LOCATIONS,
+        accept_new_options=True,
+        placeholder="Choose or type a location..."
     )
 
     st.divider()
@@ -404,7 +406,7 @@ def MakeOrderForm(username="Guest"):
 
     with st.form("checklist_form",border=False):
         needed_client = st.checkbox("Items Needed From Client")
-        ordered_dbd = st.checkbox("Items To Be Ordered By Desserts By Dana")
+        ordered_dbd = st.checkbox("Items To Be Ordered By Ratzon Chen")
         items_received = st.checkbox("Items Received (Date / Initials / Item)")
         equipment_returned = st.checkbox("Equipment Rental Returned To DBD")
         time_confirmed = st.checkbox("Time Confirmed")
@@ -959,13 +961,13 @@ def ViewOrderForm():
                     st.text_area("Cake Stand", value=decor.get('cake_stand', ''), disabled=True, height=200, key=f"v_dc_cs_{idx}")
                 
                 st.divider()
-                st.text_input("Circle Location", value=order_data.get('circle_location', ''), disabled=True, key=f"v_cloc_{idx}")
+                st.text_input("Location", value=order_data.get('circle_location', ''), disabled=True, key=f"v_cloc_{idx}")
 
                 st.divider()
                 st.markdown("## Checklist")
                 cl = order_data.get('checklist', {})
                 st.checkbox("Items Needed From Client", value=cl.get('needed_client', False), disabled=True, key=f"v_cl_1_{idx}")
-                st.checkbox("Items To Be Ordered By Desserts By Dana", value=cl.get('ordered_dbd', False), disabled=True, key=f"v_cl_2_{idx}")
+                st.checkbox("Items To Be Ordered By Ratzon Chen", value=cl.get('ordered_dbd', False), disabled=True, key=f"v_cl_2_{idx}")
                 st.checkbox("Items Received (Date / Initials / Item)", value=cl.get('items_received', False), disabled=True, key=f"v_cl_3_{idx}")
                 st.checkbox("Equipment Rental Returned To DBD", value=cl.get('equipment_returned', False), disabled=True, key=f"v_cl_4_{idx}")
                 st.checkbox("Time Confirmed", value=cl.get('time_confirmed', False), disabled=True, key=f"v_cl_5_{idx}")

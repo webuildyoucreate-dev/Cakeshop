@@ -39,7 +39,10 @@ cursor = conn.cursor()
 def handle_screens():
 
     with st.sidebar:
-        st.title(f"Logged in as: {st.session_state.username}")
+        st.image("logo.png", use_container_width=True)
+        st.markdown("<h2 style='text-align: center; margin-top: -10px; margin-bottom: 20px;'>Ratzon Chen</h2>", unsafe_allow_html=True)
+        st.divider()
+        st.write(f"Logged in as: **{st.session_state.username}**")
         sc1,sc2 = st.columns(2)
         with sc1:
             st.button("Logout", on_click=lambda: st.session_state.update(authenticated=False))
@@ -70,7 +73,7 @@ def handle_screens():
     if st.session_state.screen == "order_form":
         MakeOrderForm(st.session_state.username)
     elif st.session_state.screen == "view_history":
-        st.title("Desserts By Dana - History")
+        st.title("Ratzon Chen - History")
         tab_orders, tab_requisitions = st.tabs(["📋 Past Orders", "📝 Past Requisitions"])
         with tab_orders:
             ViewOrderForm()
@@ -88,6 +91,12 @@ def login_screen():
             
     
     if not st.session_state.authenticated:
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            st.image("logo.png", width=100)
+        with col2:
+            st.markdown("<h1 style='margin-top: 15px;'>Ratzon Chen</h1>", unsafe_allow_html=True)
+            
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         

@@ -166,11 +166,12 @@ def RequisitionForm(username=None):
     st.write("Enter the quantity needed for each item below, then click **Save Requisition** at the bottom.")
 
     # From / To location
+    LOCATIONS = ["Farmers Market", "Main Store", "Booth Corner"]
     loc_col1, loc_col2 = st.columns(2)
     with loc_col1:
-        from_location = st.text_input("From Location", placeholder="e.g. Main Kitchen", key=f"req_from_loc_{st.session_state.req_form_id}")
+        from_location = st.selectbox("From Location", LOCATIONS, key=f"req_from_loc_{st.session_state.req_form_id}")
     with loc_col2:
-        to_location = st.text_input("To Location", placeholder="e.g. Store F", key=f"req_to_loc_{st.session_state.req_form_id}")
+        to_location = st.selectbox("To Location", LOCATIONS, key=f"req_to_loc_{st.session_state.req_form_id}")
 
     st.divider()
 

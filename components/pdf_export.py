@@ -169,7 +169,7 @@ def generate_order_pdf(order_data: dict, order_num: int, author: str, time_creat
 
     # ── Header ─────────────────────────────────────────────────────────────────
     story.append(_header_table(
-        "Desserts By Dana",
+        "Ratzon Chen",
         f"Order #{order_num}  ·  {order_type}  ·  Created by {author}"
     ))
     story.append(Spacer(1, 10))
@@ -289,15 +289,15 @@ def generate_order_pdf(order_data: dict, order_num: int, author: str, time_creat
     ], styles)
     story += _field("Cake Stand", decor.get("cake_stand", ""), styles)
 
-    # ── Circle Location ────────────────────────────────────────────────────────
-    story += _section("Circle Location", styles)
+    # ── Location ───────────────────────────────────────────────────────────────
+    story += _section("Location", styles)
     story += _field("", order_data.get("circle_location", ""), styles)
 
     # ── Checklist ─────────────────────────────────────────────────────────────
     story += _section("Checklist", styles)
     checklist_items = [
         ("Items Needed From Client",              "needed_client"),
-        ("Items To Be Ordered By Desserts By Dana","ordered_dbd"),
+        ("Items To Be Ordered By Ratzon Chen",    "ordered_dbd"),
         ("Items Received (Date / Initials / Item)","items_received"),
         ("Equipment Rental Returned To DBD",      "equipment_returned"),
         ("Time Confirmed",                        "time_confirmed"),
@@ -349,7 +349,7 @@ def generate_requisition_pdf(req_data: dict, req_id: int, author: str, time_crea
 
     # ── Header ─────────────────────────────────────────────────────────────────
     story.append(_header_table(
-        "Desserts By Dana",
+        "Ratzon Chen",
         f"Requisition #{req_id}  ·  Saved by {author}  ·  {formatted_time}"
     ))
     story.append(Spacer(1, 10))
